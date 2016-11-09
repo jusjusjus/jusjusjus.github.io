@@ -1,0 +1,66 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="http://static.lyrk.de/leaflet/0.7/leaflet.css" />
+		<script src="http://static.lyrk.de/leaflet/0.7/leaflet.js"></script>
+		
+		<script src="./js/jquery-3.1.1.min.js"></script>
+		<script src="./js/main.js"></script>
+
+		<meta charset="UTF-8">
+
+		<script src="./js/leaflet-heat.js"></script>
+		<style type="text/css">
+			
+
+		</style>
+		<link rel="stylesheet" type="text/css" href="style.css">
+	</head>
+	<body>
+		<div id="sidebar">
+			<h3>Welcher Stadtteil passt zu mir?</h3>
+			<img class="logo" src="./img/logo@2x.png"/><br><hr>
+			<h3>So soll mein Stadtteil sein</h3>
+			<div class="slider">
+				<input type="checkbox" id="cb_dichte" onClick="renderObj()">
+				<input type="range" min="0" max="10" step="0.5" id="slider1" onInput="renderObj()">
+				<label class="left">Ländlich</label>
+				<label class="right">Städtisch</label>
+			</div>
+			<div class="slider">
+				<input type="checkbox" id="cb_farbe" onClick="renderObj()">
+				<input type="range" min="0" max="10" step="0.5" id="slider2" onInput="renderObj()">
+				<label class="left">Monochrom</label>
+				<label class="right">Bunt</label>
+			</div>
+			<div class="slider">
+				<input type="checkbox" id="cb_wahl" onClick="renderObj()">
+				<input type="range" min="0" max="10" step="0.5" id="slider3" onInput="renderObj()">
+				<label class="left">Nationalbewusst</label>
+				<label class="right">Alternativ</label>
+			</div><br><hr>
+			<h3>Das ist mir wichtig</h3>
+			<div class="slider">
+				<input type="range" min="0" max="10" step="0.5" id="slider4" onInput="renderObj()">
+				<label class="left">Familie</label>
+				<label class="right">Selbstverwirklichung</label>
+			</div>
+			<div class="slider">
+				<input type="range" min="0" max="10" step="0.5" value="0" id="slider5" onInput="renderObj()">
+				<label class="center">ÖPNV Verfügbarkeit</label>
+			</div>
+		</div>
+		<div id="map"></div>
+		<script type="text/javascript"> 
+			map = L.map('map').setView([51.0474, 13.7384], 13);
+
+			if(L.Browser.retina) var tp = "lr";
+			else var tp = "ls";
+
+			L.tileLayer('http://tiles.lyrk.org/'+tp+'/{z}/{x}/{y}?apikey=64fbc258da5d4c1897f4332b67866b46', {
+				attribution: '<a href="http://geodienste.lyrk.de/copyright">Lizenzinformationen</a>, Tiles by <a href="http://geodienste.lyrk.de/">Lyrk</a>',
+				maxZoom: 18
+				//maxZoom: 15, minZoom: 10
+			}).addTo(map);
+		</script>
+	</body>
+</html>
