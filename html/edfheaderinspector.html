@@ -8,7 +8,7 @@
 	var edf = EDF();
 	var selected = null;
 
-	var load_selected_file = function () {
+	var load_selected_file = async function () {
 		var files = document.getElementById('fileSelector').files;
 		for (var f=0; f<files.length; f++) {
 			var edf = EDF();
@@ -19,6 +19,13 @@
 
 	var select_file = function (f) {
 		selected = opened_files[f];
+		refresh_navbar();
+		refresh_edfinfo();
+	}
+
+	var clear_filecache = function () {
+		selected = null;
+		opened_files = [];
 		refresh_navbar();
 		refresh_edfinfo();
 	}
@@ -36,6 +43,7 @@
 			}
 			txt += ">"+f.filename+"</li>";
 		}
+		txt += "<li onclick='clear_filecache()'>Clear</li>";
 		nav.innerHTML = txt;
 	}
 
@@ -64,10 +72,18 @@
 	function refresh_edfinfo() {
 		// Header
 		var title = document.getElementById("filetitle");
-		title.innerHTML = "<h3>Header and Channel Information for File '"+selected.filename+"'</h3>";
 		var headerDiv = document.getElementById("header");
+		var channelsDiv = document.getElementById("channels");
+		if (selected == null) {
+			title.innerHTML = '';
+			headerDiv.innerHTML = '';
+			channelsDiv.innerHTML = '';
+			return;
+		}
+		title.innerHTML = "<h3>Header and Channel Information for File '"+selected.filename+"'</h3>";
 		var txt = "<table id='headerTab'>";
 		txt += "<tr><th>Header field</th><th>Value</th></tr>";
+		var val = '';
 		for (var key in selected.fields) {
 			if(selected[key] === "") {
 				val = 'empty';
@@ -82,7 +98,6 @@
 		txt += "</table>";
 		headerDiv.innerHTML = txt;
 		// Channels
-		var channelsDiv = document.getElementById("channels");
 		var channels = selected.channels;
 		var txt = "<table id='channelsTab'>";
 		txt += "<tr>";
@@ -128,7 +143,7 @@
 	<hr>
   <div style="text-align:right">
     <label for="file">Choose file to analyze</label>
-    <input type="file" id="fileSelector" name="fileSelector" onchange="load_selected_file(this);" accept=".edf" multiple/>
+    <input type="file" id="fileSelector" onchange="load_selected_file();" accept=".edf" multiple/>
   </div>
 </header>
 
