@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type='text/css' href="../css/edfheaderinspector.css"></style>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.rawgit.com/jusjusjus/edfjs/master/js/edf.js"></script>
+<script>
+	var opened_files = [];
+	var edf = EDF();
+	var selected = null;
+	var window_duration = 10.0; // seconds
+
+	var load_selected_file = async function () {
+		var files = document.getElementById('fileSelector').files;
+		for (var f=0; f<files.length; f++) {
+			var edf = EDF();
+			edf.from_file(files[f], files_loaded, header_only=false);
+			opened_files.push(edf);
+		}
+	}
+
+	var select_file = function (f) {
+		selected = opened_files[f];
+		refresh_navbar();
+		create_new_plot();
+	}
+
+	var clear_filecache = function () {
+		selected = null;
+		opened_files = [];
+		refresh_navbar();
+	}
+
+	function refresh_navbar() {
+		nav = document.getElementById("nav");
+		var txt = "";
+		for (var e in opened_files) {
+			f = opened_files[e];
+			txt += "<li "
+			if (f === selected) {
+				txt += "class='selected'"
+			} else {
+				txt += "onclick='select_file("+e+")'";
+			}
+			txt += ">"+f.filename+"</li>";
+		}
+		txt += "<li onclick='clear_filecache()'>Clear</li>";
+		nav.innerHTML = txt;
+	}
+
+	function create_drawing_area() {
+		edfinfo = document.getElementById("edfinfo");
+		var txt = '<div class="drawingArea" id="drawingArea" style="height:'+100*selected.channels.length+'px;width:100%;"></div>';
+		txt += '<form oninput="secondDisplay.value=currTime.value"><input type="range" id="currTime" name="currTime" min="0" max="'+selected.duration+'" value="0" oninput="set_time(this.value)"><output name="secondDisplay" for="currTime"></output></form>';
+		edfinfo.innerHTML = txt;
+	}
+
+	function create_new_plot() {
+		create_drawing_area();
+		var t0=0.0;
+		var traces = [];
+		var layout = {
+			xaxis: {title: "time (sec.)"},
+			margin: { t: 0, b: 20, l: 40, r: 20 }
+		};
+		var domain = Array.from(new Array(selected.channels.length+1), (val, idx)=>idx/selected.channels.length)
+		console.log(domain);
+		for (var c in selected.channels) {
+			var c1 = Number(c)+1;
+			// data
+			var C = selected.channels[c];
+			var y = C.get_physical_samples(t0, window_duration);
+			var dt = 1/C.sampling_rate();
+			var x = Float32Array.from(new Array(y.length), (val, idx)=>t0+idx*dt)
+			var data = {
+				x: x, y: y,
+				mode: 'lines',
+				line: { color: 'rgb(0.0, 0.0, 0.0)', width: 1.0 },
+				yaxis: 'y'+c1
+			};
+			// layout
+			layout['xaxis'+c1] = { anchor: 'y'+c1 };
+			layout['yaxis'+c1] = {
+				domain: [domain[c], domain[c1]],
+				title: C.label
+			};
+			traces.push(data);
+		}
+		Plotly.newPlot("drawingArea", traces, layout);
+	}
+
+	function set_time(t0=0.0) {
+		drawingArea = document.getElementById("drawingArea");
+		for (var c in selected.channels) {
+			var C = selected.channels[c];
+			var y = C.get_physical_samples(t0, window_duration);
+			var x = Float32Array.from(new Array(y.length), (val, idx)=>t0+idx/C.sampling_rate())
+			Plotly.restyle(drawingArea, {'x': x, 'y': y}, c);
+		}
+	}
+
+	function files_loaded(evt) {
+		select_file(opened_files.length-1);
+	}
+
+	function setup(evt) {
+		var fileSelector = document.getElementById('fileSelector');
+		fileSelector.addEventListener("onchange", load_selected_file);
+		load_selected_file();
+	}
+</script>
+</head>
+<body onload="setup()">
+
+<div class="container">
+
+<header>
+	<h1>EDF Data Viewer (BETA Version)</h1>
+	<hr>
+  <div style="text-align:right">
+    <label for="file">Choose file to analyze</label>
+    <input type="file" id="fileSelector" onchange="load_selected_file();" accept=".edf" multiple/>
+  </div>
+</header>
+
+<div id="nav"></div>
+
+<article>
+<div class="edfinfo" id="edfinfo">
+	<div class="drawingArea" id="drawingArea" style="height:300px;width:100%;"></div>
+</div>
+</article>
+
+<footer>Copyright &copy; <a href="https://github.com/jusjusjus">jusjusjus</a></footer>
+
+</div>
+
+</body>
+</html>
+
