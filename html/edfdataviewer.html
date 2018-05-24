@@ -65,8 +65,8 @@
 		areaFrame = document.getElementById("areaFrame");
     var selected_channels = get_selected_channels(selected);
 		var txt = "<div class='drawingArea' id='drawingArea' style='height:"+100*selected_channels.length+"px;width:100%;'></div>";
-		txt += "<form class='sliderFrame' oninput='secondDisplay.value=new Date(selected.startdatetime.getTime()+1000*(+currTime.value)).toISOString()'>"
-		txt += "<input class='timeSlider' type='range' id='currTime' name='currTime' min='0' max='"+selected.duration+"' value='0' oninput='set_time(this.value)'>
+		txt += "<form class='sliderFrame' oninput='secondDisplay.value=new Date(selected.startdatetime.getTime()+1000*(+currTime.value)).toISOString()'>";
+		txt += "<input class='timeSlider' type='range' id='currTime' name='currTime' min='0' max='"+selected.duration+"' value='0' oninput='set_time(this.value)'>";
 		txt += "<output name='secondDisplay' for='currTime'></output></form>";
 		areaFrame.innerHTML = txt;
 	}
