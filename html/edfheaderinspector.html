@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link rel="stylesheet" type='text/css' href="../css/edfbase.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfheaderinspector.css"></style>
 <script src="https://cdn.rawgit.com/jusjusjus/edfjs/master/js/edf.js"></script>
 <script>
@@ -35,11 +36,11 @@
 		var txt = "";
 		for (var e in opened_files) {
 			f = opened_files[e];
-			txt += "<li "
+			txt += "<li class="
 			if (f === selected) {
-				txt += "class='selected'"
+				txt += "'selected'"
 			} else {
-				txt += "onclick='select_file("+e+")'";
+				txt += "'unselected' onclick='select_file("+e+")'";
 			}
 			txt += ">"+f.filename+"</li>";
 		}
@@ -80,7 +81,6 @@
 			channelsDiv.innerHTML = '';
 			return;
 		}
-		title.innerHTML = "<h3>Header and Channel Information for File '"+selected.filename+"'</h3>";
 		var txt = "<table id='headerTab'>";
 		txt += "<tr><th>Header field</th><th>Value</th></tr>";
 		var val = '';
