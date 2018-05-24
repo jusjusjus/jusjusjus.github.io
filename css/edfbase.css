@@ -5,16 +5,17 @@
 /* light-yellow: #effebe rgb(0.94,0.99,0.75) */
 
 div.container {
-    width: 100%;
-    border: 1px solid #effebe;
+	width: 100%;
+	border: 1px solid #effebe;
+	background: #effebe;
 }
 
 header {
-    padding: 1em;
-		background-color: #ca555f;
-    clear: left;
-    text-align: center;
-		color: white;
+	padding: 7px;
+	background-color: #ca555f;
+	clear: left;
+	text-align: left;
+	color: white;
 }
 
 .input {
@@ -29,15 +30,15 @@ header {
 }
 
 h1 h2 h3 h4 {
-    color: #888888;
+	color: #888888;
 }
 
 footer {
-    padding: 1em;
-    color: #aaaaaa;
-		background-color: #f8c68d;
-    clear: left;
-    text-align: right;
+	padding: 1em;
+	color: #aaaaaa;
+	background-color: #f8c68d;
+	clear: left;
+	text-align: right;
 }
 
 #nav {
@@ -57,7 +58,7 @@ footer {
 	border: 3px solid #effebe;
 	border-radius: 7px;
 	text-align: center;
-	padding: 14px 16px;
+	padding: 4px 10px;
 }
 
 #nav li.unselected {
@@ -81,7 +82,7 @@ footer {
 }
 
 article {
-    padding: 1em;
-    overflow: scroll;
-		background-color: #effebe;
+	padding: 1em;
+	overflow: scroll;
+	background-color: #effebe;
 }

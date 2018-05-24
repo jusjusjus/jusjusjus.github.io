@@ -43,9 +43,9 @@
 		var txt = "";
 		for (var e in opened_files) {
 			f = opened_files[e];
-			txt += "<li class="
+			txt += "<li class=";
 			if (f === selected) {
-				txt += "'selected'"
+				txt += "'selected'";
 			} else {
 				txt += "'unselected' onclick='select_file("+e+")'";
 			}
@@ -146,7 +146,7 @@
 <div class="container">
 
 <header>
-	<h1>EDF Header Inspector (BETA Version)</h1>
+	<h3>EDF Header Inspector (BETA Version)</h3>
 	<hr>
   <div style="text-align:right">
     <label for="file">Choose file to analyze</label>

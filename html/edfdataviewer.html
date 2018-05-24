@@ -6,6 +6,7 @@
 <!-- Load scripts locally -->
 <script src="../js/plotly-latest.min.js"></script>
 <script src="../js/edf.js"></script>
+<script src="../js/area_frame.js"></script>
 <!-- Load scripts from CDNs -->
 <script type="text/javascript">
   if (typeof EDF == 'undefined') {
@@ -17,39 +18,44 @@
 </script>
 <script>
 	var edf = EDF();
-	var selected = null;
+	// var selected = null;
 	var window_duration = 10.0; // seconds
+	var areaFrame = null;
 
 	var load_selected_file = async function () {
 		var files = document.getElementById('fileSelector').files;
-    selected = EDF();
+    var selected = EDF();
     selected.from_file(files[0], files_loaded, header_only=false);
+		areaFrame = AreaFrame("areaFrame", selected);
 	}
 
 	function select_file (f=null) {
 		refresh_navbar();
-		create_new_plot();
+		areaFrame.create_new_plot();
 	}
 
 	var clear_filecache = function () {
-		selected = null;
+		// selected = null;
+    areaFrame.del();
+		delete areaFrame;
+		areaFrame = null;
 		refresh_navbar();
-    clear_drawing_area();
 	}
 
 	function refresh_navbar() {
     var nav = document.getElementById("nav");
     var txt = "";
-    if (selected != null) {
-      for (var c in selected.channels) {
-        var C = selected.channels[c];
+    if (areaFrame != null) {
+			var channels = areaFrame.channels();
+      for (var c in areaFrame.channels()) {
+        var C = channels[c];
         txt += "<li";
         if (C.selected) {
           txt += " class='selected'";
         } else {
           txt += " class='unselected'";
         }
-        txt += " onclick='switch_selection("+c+")'>"+C.label+"</li>";
+        txt += " onclick='areaFrame.switch_selection("+c+", refresh_navbar)'>"+C.label+"</li>";
       }
       txt += "<li class='clear' onclick='clear_filecache()'>Clear</li>";
     }
@@ -65,7 +71,7 @@
 		date = selected.relative_date(millis);
 		return date.toUTCString();
 	}
-
+	
 	function create_drawing_area() {
 		areaFrame = document.getElementById("areaFrame");
     var selected_channels = get_selected_channels(selected);
@@ -91,11 +97,11 @@
     return selected_channels;
   }
 
-  function switch_selection(c) {
-    selected.channels[c].selected = !(selected.channels[c].selected);
-    refresh_navbar();
-    create_new_plot();
-  }
+  // function switch_selection(c) {
+  //   selected.channels[c].selected = !(selected.channels[c].selected);
+  //   refresh_navbar();
+  //   create_new_plot();
+  // }
 
 	function create_new_plot() {
 		create_drawing_area();
@@ -167,7 +173,7 @@
 <div class="container">
 
 <header>
-	<h1>EDF Data Viewer (BETA Version)</h1>
+	<h3>EDF Data Viewer (BETA Version)</h3>
 	<hr>
   <div style="text-align:right">
     <label for="fileSelector">Choose file to analyze</label>
