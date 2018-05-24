@@ -2,11 +2,12 @@
 /* orange: #f8c68d */
 /* red: #ca555f */
 /* red-orange: #fc8236 */
+/* light-yellow: #effebe */
 
 
 div.container {
     width: 100%;
-    border: 1px solid gray;
+    border: 1px solid #effebe;
 }
 
 header {
@@ -18,7 +19,7 @@ header {
 }
 
 .input {
-	background-color: #4CAF50; /* Green */
+	background-color: #4CAF50;
 	border: none;
 	color: white;
 	padding: 15px 32px;
