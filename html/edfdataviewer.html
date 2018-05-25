@@ -21,8 +21,7 @@
 
 	async function load_selected_file () {
 		var files = document.getElementById('fileSelector').files;
-    var edf = EDF();
-    await edf.from_file(files[0], files_loaded, header_only=false);
+    var edf = await EDF().from_file(files[0], files_loaded, header_only=false);
 		figure = PlottingArea("figure", edf);
 	}
 
