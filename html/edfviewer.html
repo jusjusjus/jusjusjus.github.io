@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type='text/css' href="../css/edfviewer.css"></style>
+<link rel="stylesheet" type='text/css' href="../css/edfheaderinspector.css"></style>
+<link rel="stylesheet" type='text/css' href="../css/edfdataviewer.css"></style>
+<!-- Load scripts locally -->
+<script src="../js/plotly-latest.min.js"></script>
+<script src="../js/edf.js"></script>
+<script src="../js/area_frame.js"></script>
+<!-- Load scripts from CDNs -->
+<script type="text/javascript">
+  if (typeof Plotly == 'undefined') {
+    document.write(unescape("%3Cscript src='https://cdn.plot.ly/plotly&#45;latest.min.js' type='text/javascript'%3E%3C/script%3E"));
+  }
+  if (typeof EDF == 'undefined') {
+    document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/master/js/edf.js' type='text/javascript'%3E%3C/script%3E"));
+  }
+  if (typeof AreaFrame == 'undefined') {
+    document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/master/js/area_frame.js' type='text/javascript'%3E%3C/script%3E"));
+  }
+</script>
+<script>
+	var opened_files = [];
+	var edf = EDF();
+	var selected = null;
+	var window_duration = 10.0; // sec.
+	var areaFrame = null;
+
+	var load_selected_file = async function () {
+		var files = document.getElementById('fileSelector').files;
+		for (var f=0; f<files.length; f++) {
+			var edf = EDF();
+			await edf.from_file(files[f], files_loaded, header_only=false);
+			opened_files.push(edf);
+		}
+	}
+
+	var switch_selection = function (i) {
+		areaFrame = AreaFrame("areaFrame", selected);
+		areaFrame.switch_selection(i, null);
+	}
+
+	var select_file = function (f) {
+		selected = opened_files[f];
+		refresh_navbar();
+		refresh_edfinfo();
+	}
+
+	var clear_filecache = function () {
+		selected = null;
+		opened_files = [];
+		refresh_navbar();
+		refresh_edfinfo();
+	}
+
+	function refresh_navbar() {
+		refresh_filenav();
+	}
+
+	function refresh_filenav() {
+		nav = document.getElementById("filenav");
+		var txt = "";
+		for (var e in opened_files) {
+			f = opened_files[e];
+			txt += "<li class="
+			if (f === selected) {
+				txt += "'selected'"
+			} else {
+				txt += "'unselected'";
+			}
+			txt += " onclick='select_file("+e+")'>"+f.filename+"</li>";
+		}
+		txt += "<li class='clear' onclick='clear_filecache()'>Clear</li>";
+		nav.innerHTML = txt;
+	}
+
+	var name_map = {
+		'label': 'Label',
+		'channel_type': 'Type',
+		'physical_dimension': 'Unit',
+		'physical_minimum': 'Min. Value',
+		'physical_maximum': 'Max. Value',
+		'digital_minimum': 'Digi. Min.',
+		'digital_maximum': 'Digi. Max.',
+		'prefiltering': 'Filter',
+		'num_samples_per_record': 'Samples per Record',
+		'reserved': 'reserved',
+		'startdate': 'Date',
+		'starttime': 'Time',
+		'num_header_bytes': 'Size',
+		'num_records': 'Records',
+		'num_channels': 'Channels',
+		'version': 'EDF Version',
+		'pid': 'Patient ID',
+		'record_duration': 'Sec. per Rec.',
+		'rid': 'Record ID'
+	};
+
+	function refresh_edfinfo() {
+		// Header
+		var title = document.getElementById("filetitle");
+		var headerDiv = document.getElementById("edfheader");
+		var channelsDiv = document.getElementById("edfchannels");
+		if (selected == null) {
+			title.innerHTML = '';
+			headerDiv.innerHTML = '';
+			channelsDiv.innerHTML = '';
+			return;
+		}
+		var txt = "<table id='headerTab'>";
+		txt += "<tr><th>Header field</th><th>Value</th></tr>";
+		var val = '';
+		for (var key in selected.fields) {
+			if(selected[key] === "") {
+				val = 'empty';
+			} else {
+				val = selected[key];
+			}
+			if(key == "starttime") {
+				val = val.replace(/\./g, ':');
+			}
+			txt += "<tr><td>"+name_map[key]+"</td><td>"+val+"</td></tr>";
+		}
+		txt += "</table>";
+		headerDiv.innerHTML = txt;
+		// Channels
+		var channels = selected.channels;
+		var txt = "<table id='channelsTab'>";
+		txt += "<tr>";
+		for (var key in channels[0].fields) {
+			txt += "<th>"+name_map[key]+"</th>";
+		}
+		txt += "</tr>";
+		for (var c in channels) {
+			var channel = channels[c];
+			txt += "<tr onclick='switch_selection("+c+")'>";
+			for (var key in channel.fields) {
+
+				if(channel[key] === "") {
+					val = 'empty';
+				} else {
+					val = channel[key];
+				}
+				txt += "<td>"+val+"</td>";
+			}
+			txt += "</tr>";
+		}
+		txt += "</table>";
+		channelsDiv.innerHTML = txt;
+	}
+
+	function files_loaded(evt) {
+		select_file(opened_files.length-1);
+	}
+
+	function setup(evt) {
+		var fileSelector = document.getElementById('fileSelector');
+		fileSelector.addEventListener("onchange", load_selected_file);
+		load_selected_file();
+	}
+</script>
+</head>
+<body onload="setup()">
+
+<div class="container">
+
+<header>
+	<h3>EDF Viewer (BETA Version)</h3>
+	<hr>
+  <div style="text-align:right">
+    <label for="fileSelector">Choose files to analyze</label>
+    <input type="file" id="fileSelector" onchange="load_selected_file();" accept=".edf" multiple/>
+  </div>
+</header>
+
+<div id="nav">
+<div id="filenav"></div>
+<div id="channelnav"></div>
+</div>
+
+<article>
+<div id="areaFrame"></div>
+<div class="edfinfo">
+	<p id="filetitle"></p>
+	<div class="edfheader" id="edfheader">
+		<h4>Introduction</h4>
+
+		<p>The <a href="https://www.edfplus.info">European Data Format</a> exists
+		since the early 90's and has been since extended several times.  It's a
+		binary format with a remarkable design to quickly stream and display
+		recorded data, and to save it in a compact form.</p>
+
+	</div>
+	<div class="edfchannels" id="edfchannels">
+		<h4>Why this website?</h4>
+
+		<p>The data in your EDF is not secured.  Anyone can read all the information,
+		that has access to the file.  Before you share your EDF recording for research
+		purposes you need to ensure that all <a href="https://www.hipaa.com">Private Health Identifiers</a> have been removed.
+		This website tries to display the header information in the EDF you provide.</p>
+
+
+	</div>
+</div>
+		<p style="font-size:70%">Disclaimer: The software on this website is provided 'as is' without
+		warranty of any kind, either express or implied, including, but not limited
+		to, the implied warranties of fitness for a purpose, or the warranty of
+		non-infringement.  Without limiting the foregoing, we make no warranty
+		that: the software will meet your requirements the software will be
+		uninterrupted, timely, secure or error-free the results that may be
+		obtained from the use of the software will be effective, accurate or
+		reliable the quality of the software will meet your expectations any errors
+		in the software obtained from the BGS web site will be corrected.  In no
+		event shall the BGS be liable to you or any third parties for any special,
+		punitive, incidental, indirect or consequential damages of any kind, or any
+		damages whatsoever, including, without limitation, those resulting from
+		loss of use, data or profits, whether or not we have been advised of the
+		possibility of such damages, and on any theory of liability, arising out of
+		or in connection with the use of this software.</p>
+</article>
+
+<footer>Copyright &copy; <a href="https://github.com/jusjusjus">jusjusjus</a></footer>
+
+</div>
+
+</body>
+</html>
+
