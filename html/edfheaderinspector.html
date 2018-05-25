@@ -38,10 +38,10 @@
 	}
 
 	function refresh_navbar() {
-		nav = document.getElementById("nav");
+		var nav = document.getElementById("nav");
 		var txt = "";
 		for (var e in opened_files) {
-			f = opened_files[e];
+			var f = opened_files[e];
 			txt += "<li class=";
 			if (f === selected) {
 				txt += "'selected'";
