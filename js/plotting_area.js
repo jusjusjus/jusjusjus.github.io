@@ -1,8 +1,11 @@
 
-PlottingArea = function (div_element_id, edffile) {
+'use strict'
+
+var PlottingArea = function (element_id, edffile) {
 
   var self = {
-    'element': document.getElementById(div_element_id),
+    'element_id': element_id,
+    'element': function () { return document.getElementById(self.element_id); },
     'file': edffile
   };
 
@@ -13,15 +16,14 @@ PlottingArea = function (div_element_id, edffile) {
 
   var window_start = 0.0, window_duration = 10.0; // sec.
 
-  del = function () {
-    self.element.innerHTML = '';
-    delete self;
+  var del = function () {
+    self.element().innerHTML = '';
   }
 
   function get_selected_channels() {
     var selected_channels = [];
-    for (c in self.file.channels) {
-      C = self.file.channels[c];
+    for (var c in self.file.channels) {
+      var C = self.file.channels[c];
       if (C.selected) {
         selected_channels.push(C);
       }
@@ -31,25 +33,25 @@ PlottingArea = function (div_element_id, edffile) {
 
   function switch_selection(c, callback) {
     self.file.channels[c].selected = !(self.file.channels[c].selected);
-    if (callback) {callback();}
+    if (callback) { callback(); }
     create_new_plot();
   }
   
   function rel_date_str(millis) {
-    date = self.file.relative_date(millis);
+    var date = self.file.relative_date(millis);
     return date.toUTCString();
   }
 
   function create_drawing_area() {
     var selected_channels = get_selected_channels();
     var txt = "<div class='drawingArea' id='drawingArea' style='height:"+100*selected_channels.length+"px;width:100%;'></div>";
-    self.element.innerHTML = txt;
+    self.element().innerHTML = txt;
   }
 
   function create_new_plot() {
     var selected_channels = get_selected_channels();
     if (selected_channels.length == 0) {
-      self.element.innerHTML = "";
+      self.element().innerHTML = "";
       return;
     }
     create_drawing_area();
