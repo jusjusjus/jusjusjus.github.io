@@ -7,7 +7,7 @@
 <!-- Load scripts locally -->
 <script src="../js/plotly-latest.min.js"></script>
 <script src="../js/edf.js"></script>
-<script src="../js/area_frame.js"></script>
+<script src="../js/plotting_area.js"></script>
 <!-- Load scripts from CDNs -->
 <script type="text/javascript">
   if (typeof Plotly == 'undefined') {
@@ -16,16 +16,14 @@
   if (typeof EDF == 'undefined') {
     document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/master/js/edf.js' type='text/javascript'%3E%3C/script%3E"));
   }
-  if (typeof AreaFrame == 'undefined') {
-    document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/master/js/area_frame.js' type='text/javascript'%3E%3C/script%3E"));
+  if (typeof PlottingArea == 'undefined') {
+    document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/master/js/plotting_area.js' type='text/javascript'%3E%3C/script%3E"));
   }
 </script>
 <script>
 	var opened_files = [];
-	var edf = EDF();
 	var selected = null;
-	var window_duration = 10.0; // sec.
-	var areaFrame = null;
+	var figure = null;
 
 	var load_selected_file = async function () {
 		var files = document.getElementById('fileSelector').files;
@@ -37,8 +35,16 @@
 	}
 
 	var switch_selection = function (i) {
-		areaFrame = AreaFrame("areaFrame", selected);
-		areaFrame.switch_selection(i, null);
+    if (figure == null) {
+      figure = PlottingArea("figure", selected);
+      slider = document.getElementById("slider");
+      var txt = "";
+      txt += "<form class='sliderFrame' oninput='timeDisplay.value=figure.rel_date_str(1000*currTime.value)'>";
+      txt += "<input class='timeSlider' type='range' id='currTime' name='currTime' min='0' max='"+selected.duration+"' value='0' oninput='figure.set_time(this.value)'>";
+      txt += "<output id='timeDisplay' name='timeDisplay' for='currTime'></output></form>";
+      slider.innerHTML = txt;
+    }
+		figure.switch_selection(i, null);
 	}
 
 	var select_file = function (f) {
@@ -48,6 +54,10 @@
 	}
 
 	var clear_filecache = function () {
+		figure.del();
+		delete figure;
+		figure = null;
+		delete selected;
 		selected = null;
 		opened_files = [];
 		refresh_navbar();
@@ -180,7 +190,8 @@
 </div>
 
 <article>
-<div id="areaFrame"></div>
+<div id="figure"></div>
+<div id="slider"></div>
 <div class="edfinfo">
 	<p id="filetitle"></p>
 	<div class="edfheader" id="edfheader">

@@ -1,5 +1,5 @@
 
-AreaFrame = function (div_element_id, edffile) {
+PlottingArea = function (div_element_id, edffile) {
 
   var self = {
     'element': document.getElementById(div_element_id),
@@ -11,7 +11,7 @@ AreaFrame = function (div_element_id, edffile) {
     staticPlot: true
   };
 
-  var window_duration = 10.0; // sec.
+  var window_start = 0.0, window_duration = 10.0; // sec.
 
   del = function () {
     self.element.innerHTML = '';
@@ -43,14 +43,7 @@ AreaFrame = function (div_element_id, edffile) {
   function create_drawing_area() {
     var selected_channels = get_selected_channels();
     var txt = "<div class='drawingArea' id='drawingArea' style='height:"+100*selected_channels.length+"px;width:100%;'></div>";
-    txt += "<form class='sliderFrame' oninput='timeDisplay.value=areaFrame.rel_date_str(1000*currTime.value)'>";
-    txt += "<input class='timeSlider' type='range' id='currTime' name='currTime' min='0' max='"+self.file.duration+"' value='0' oninput='areaFrame.set_time(this.value)'>";
-    txt += "<output id='timeDisplay' name='timeDisplay' for='currTime'></output></form>";
     self.element.innerHTML = txt;
-    requestAnimationFrame(function () {
-      timeDisplay = document.getElementById("timeDisplay");
-      timeDisplay.value = areaFrame.rel_date_str(1000*currTime.value);
-    });
   }
 
   function create_new_plot() {
@@ -60,7 +53,6 @@ AreaFrame = function (div_element_id, edffile) {
       return;
     }
     create_drawing_area();
-    var t0=0.0;
     var traces = [];
     var layout = {
       hovermode: false,
@@ -75,7 +67,7 @@ AreaFrame = function (div_element_id, edffile) {
       var c1 = Number(c)+1;
       // data
       var C = selected_channels[c];
-      var y = C.get_physical_samples(t0, window_duration);
+      var y = C.get_physical_samples(window_start, window_duration);
       var dt = 1/C.sampling_rate();
       var x = Float32Array.from(new Array(y.length), (val, idx)=>idx*dt)
       var data = {
@@ -96,12 +88,13 @@ AreaFrame = function (div_element_id, edffile) {
     Plotly.newPlot("drawingArea", traces, layout, config);
   }
 
-  function set_time(t0=0.0) {
+  function set_time(time=0.0) {
+    window_start = time;
     drawingArea = document.getElementById("drawingArea");
     var selected_channels = get_selected_channels();
     for (var c in selected_channels) {
       var C = selected_channels[c];
-      var y = C.get_physical_samples(t0, window_duration);
+      var y = C.get_physical_samples(window_start, window_duration);
       var x = Float32Array.from(new Array(y.length), (val, idx)=>idx/C.sampling_rate())
       Plotly.restyle(drawingArea, {'x': x, 'y': y}, c);
     }

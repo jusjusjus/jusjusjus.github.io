@@ -6,7 +6,7 @@
 <!-- Load scripts locally -->
 <script src="../js/plotly-latest.min.js"></script>
 <script src="../js/edf.js"></script>
-<script src="../js/area_frame.js"></script>
+<script src="../js/plotting_area.js"></script>
 <!-- Load scripts from CDNs -->
 <script type="text/javascript">
   if (typeof EDF == 'undefined') {
@@ -17,37 +17,35 @@
   }
 </script>
 <script>
-	var edf = EDF();
-	// var selected = null;
-	var window_duration = 10.0; // seconds
-	var areaFrame = null;
+	var figure = null;
 
-	var load_selected_file = async function () {
+	async function load_selected_file () {
 		var files = document.getElementById('fileSelector').files;
-    var selected = EDF();
-    selected.from_file(files[0], files_loaded, header_only=false);
-		areaFrame = AreaFrame("areaFrame", selected);
+    var edf = EDF();
+    await edf.from_file(files[0], files_loaded, header_only=false);
+		figure = PlottingArea("figure", edf);
 	}
 
-	function select_file (f=null) {
+	function files_loaded (evt=null) {
 		refresh_navbar();
-		areaFrame.create_new_plot();
+		figure.create_new_plot();
+		create_slider();
 	}
 
-	var clear_filecache = function () {
-		// selected = null;
-    areaFrame.del();
-		delete areaFrame;
-		areaFrame = null;
+	function clear_filecache () {
+    figure.del();
+		delete figure;
+		figure = null;
+		document.getElementById("slider").innerHTML = "";
 		refresh_navbar();
 	}
 
 	function refresh_navbar() {
     var nav = document.getElementById("nav");
     var txt = "";
-    if (areaFrame != null) {
-			var channels = areaFrame.channels();
-      for (var c in areaFrame.channels()) {
+    if (figure != null) {
+			var channels = figure.channels();
+      for (var c in figure.channels()) {
         var C = channels[c];
         txt += "<li";
         if (C.selected) {
@@ -55,110 +53,24 @@
         } else {
           txt += " class='unselected'";
         }
-        txt += " onclick='areaFrame.switch_selection("+c+", refresh_navbar)'>"+C.label+"</li>";
+        txt += " onclick='figure.switch_selection("+c+", refresh_navbar)'>"+C.label+"</li>";
       }
       txt += "<li class='clear' onclick='clear_filecache()'>Clear</li>";
     }
     nav.innerHTML = txt;
 	}
 
-	function clear_drawing_area() {
-		areaFrame = document.getElementById("areaFrame");
-		areaFrame.innerHTML = '';
-	}
-
-	function rel_date_str(millis) {
-		date = selected.relative_date(millis);
-		return date.toUTCString();
-	}
-	
-	function create_drawing_area() {
-		areaFrame = document.getElementById("areaFrame");
-    var selected_channels = get_selected_channels(selected);
-		var txt = "<div class='drawingArea' id='drawingArea' style='height:"+100*selected_channels.length+"px;width:100%;'></div>";
-		txt += "<form class='sliderFrame' oninput='timeDisplay.value=rel_date_str(1000*currTime.value)'>";
-		txt += "<input class='timeSlider' type='range' id='currTime' name='currTime' min='0' max='"+selected.duration+"' value='0' oninput='set_time(this.value)'>";
+	function create_slider() {
+		slider = document.getElementById("slider");
+		var txt = "";
+		txt += "<form class='sliderFrame' oninput='timeDisplay.value=figure.rel_date_str(1000*currTime.value)'>";
+		txt += "<input class='timeSlider' type='range' id='currTime' name='currTime' min='0' max='"+figure.file.duration+"' value='0' oninput='figure.set_time(this.value)'>";
 		txt += "<output id='timeDisplay' name='timeDisplay' for='currTime'></output></form>";
-		areaFrame.innerHTML = txt;
+		slider.innerHTML = txt;
 		requestAnimationFrame(function () {
 			timeDisplay = document.getElementById("timeDisplay");
-			timeDisplay.value = rel_date_str(1000*currTime.value);
+			timeDisplay.value = figure.rel_date_str(1000*currTime.value);
 		});
-	}
-
-  function get_selected_channels(channels) {
-    var selected_channels = [];
-    for (c in selected.channels) {
-      C = selected.channels[c];
-      if (C.selected) {
-        selected_channels.push(C);
-      }
-    }
-    return selected_channels;
-  }
-
-  // function switch_selection(c) {
-  //   selected.channels[c].selected = !(selected.channels[c].selected);
-  //   refresh_navbar();
-  //   create_new_plot();
-  // }
-
-	function create_new_plot() {
-		create_drawing_area();
-		var t0=0.0;
-		var traces = [];
-		var config = {
-			displayModeBar: false,
-			staticPlot: true
-		};
-		var layout = {
-			hovermode: false,
-			plot_bgcolor: "rgb(0.94,0.99,0.75)",
-			paper_bgcolor: "rgb(0.94,0.99,0.75)",
-			showlegend: false,
-			xaxis: {title: "relative time (sec.)"},
-			margin: { t: 0, b: 30, l: 40, r: 20 }
-		};
-    selected_channels = get_selected_channels(selected.channels);
-		var domain = Array.from(new Array(selected_channels.length+1), (val, idx)=>idx/selected_channels.length)
-		for (var c in selected_channels) {
-			var c1 = Number(c)+1;
-			// data
-			var C = selected_channels[c];
-			var y = C.get_physical_samples(t0, window_duration);
-			var dt = 1/C.sampling_rate();
-			var x = Float32Array.from(new Array(y.length), (val, idx)=>idx*dt)
-			var data = {
-				x: x, y: y,
-				mode: "lines",
-				line: { color: "rgb(0.0, 0.0, 0.0)", width: 1.0 },
-				yaxis: "y"+c1
-			};
-			// layout
-			layout['xaxis'+c1] = { anchor: "y"+c1 };
-			layout['yaxis'+c1] = {
-				zeroline: false,
-				domain: [domain[c], domain[c1]],
-				title: C.label
-			};
-			traces.push(data);
-		}
-		Plotly.newPlot("drawingArea", traces, layout, config);
-	}
-
-	function set_time(t0=0.0) {
-		drawingArea = document.getElementById("drawingArea");
-    selected_channels = get_selected_channels(selected.channels);
-		for (var c in selected_channels) {
-			var C = selected_channels[c];
-			var y = C.get_physical_samples(t0, window_duration);
-			var x = Float32Array.from(new Array(y.length), (val, idx)=>idx/C.sampling_rate())
-			Plotly.restyle(drawingArea, {'x': x, 'y': y}, c);
-		}
-	}
-
-	function files_loaded(evt) {
-		select_file();
 	}
 
 	function setup(evt) {
@@ -166,6 +78,7 @@
 		fileSelector.addEventListener("onchange", load_selected_file);
 		load_selected_file();
 	}
+
 </script>
 </head>
 <body onload="setup()">
@@ -184,8 +97,8 @@
 <div id="nav"></div>
 
 <article>
-<div class="areaFrame" id="areaFrame">
-</div>
+<div class="figure" id="figure"></div>
+<div id="slider"></div>
 </article>
 
 <footer>Powered by <a href="https://plot.ly">plotly</a><br>
