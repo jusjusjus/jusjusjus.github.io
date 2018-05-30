@@ -35,6 +35,7 @@
 		opened_files = [];
 		refresh_navbar();
 		refresh_edfinfo();
+		document.getElementById('fileSelector').value = "";
 	}
 
 	function refresh_navbar() {
@@ -136,7 +137,9 @@
 	function setup(evt) {
 		var fileSelector = document.getElementById('fileSelector');
 		fileSelector.addEventListener("onchange", load_selected_file);
-		load_selected_file();
+    if(fileSelector.value != "") {
+      load_selected_file();
+    }
 	}
 </script>
 </head>

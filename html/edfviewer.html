@@ -8,6 +8,7 @@
 <script src="../js/plotly-latest.min.js"></script>
 <script src="../js/edf.js"></script>
 <script src="../js/plotting_area.js"></script>
+<script src="../js/slider.js"></script>
 <!-- Load scripts from CDNs -->
 <script type="text/javascript">
   if (typeof Plotly == 'undefined') {
@@ -16,14 +17,12 @@
   if (typeof EDF == 'undefined') {
     document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/c75d3926/js/edf.js' type='text/javascript'%3E%3C/script%3E"));
   }
-  if (typeof PlottingArea == 'undefined') {
-    document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/master/js/plotting_area.js' type='text/javascript'%3E%3C/script%3E"));
-  }
 </script>
 <script>
 	var opened_files = [];
 	var selected = null;
 	var figure = null;
+	var slider = null;
 
 	var load_selected_file = async function () {
 		var files = document.getElementById('fileSelector').files;
@@ -33,15 +32,10 @@
 		}
 	}
 
-	var switch_selection = function (i) {
+	function switch_selection(i) {
     if (figure == null) {
       figure = PlottingArea("figure", selected);
-      slider = document.getElementById("slider");
-      var txt = "";
-      txt += "<form class='sliderFrame' oninput='timeDisplay.value=figure.rel_date_str(1000*currTime.value)'>";
-      txt += "<input class='timeSlider' type='range' id='currTime' name='currTime' min='0' max='"+selected.duration+"' value='0' oninput='figure.set_time(this.value)'>";
-      txt += "<output id='timeDisplay' name='timeDisplay' for='currTime'></output></form>";
-      slider.innerHTML = txt;
+			slider = Slider("slider", figure).build();
     }
 		figure.switch_selection(i, null);
 	}
@@ -53,14 +47,22 @@
 	}
 
 	var clear_filecache = function () {
-		figure.del();
-		delete figure;
-		figure = null;
+    if(slider) {
+      slider.del();
+      delete slider;
+      slider = null;
+    }
+    if(figure) {
+      figure.del();
+      delete figure;
+      figure = null;
+    }
 		delete selected;
 		selected = null;
 		opened_files = [];
 		refresh_navbar();
 		refresh_edfinfo();
+		document.getElementById('fileSelector').value = "";
 	}
 
 	function refresh_navbar() {
@@ -166,7 +168,9 @@
 	function setup(evt) {
 		var fileSelector = document.getElementById('fileSelector');
 		fileSelector.addEventListener("onchange", load_selected_file);
-		load_selected_file();
+    if(fileSelector.value != "") {
+      load_selected_file();
+    }
 	}
 </script>
 </head>

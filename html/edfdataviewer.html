@@ -7,6 +7,7 @@
 <script src="../js/plotly-latest.min.js"></script>
 <script src="../js/edf.js"></script>
 <script src="../js/plotting_area.js"></script>
+<script src="../js/slider.js"></script>
 <!-- Load scripts from CDNs -->
 <script type="text/javascript">
   if (typeof EDF == 'undefined') {
@@ -17,26 +18,32 @@
   }
 </script>
 <script>
+	var edffile = null;
 	var figure = null;
+	var slider = null;
 
 	async function load_selected_file () {
 		var files = document.getElementById('fileSelector').files;
-    var edf = await EDF().from_file(files[0], files_loaded, header_only=false);
-		figure = PlottingArea("figure", edf);
+    edffile = await EDF().from_file(files[0], files_loaded, header_only=false);
 	}
 
 	function files_loaded (evt=null) {
+		figure = PlottingArea("figure", edffile);
 		refresh_navbar();
-		figure.create_new_plot();
-		create_slider();
+		slider = Slider('slider', figure).build();
 	}
 
 	function clear_filecache () {
     figure.del();
+		slider.del();
 		delete figure;
+		delete slider;
+		delete edffile;
+		edffile = null;
 		figure = null;
-		document.getElementById("slider").innerHTML = "";
+		slider = null;
 		refresh_navbar();
+		document.getElementById('fileSelector').value = "";
 	}
 
 	function refresh_navbar() {
@@ -59,23 +66,12 @@
     nav.innerHTML = txt;
 	}
 
-	function create_slider() {
-		slider = document.getElementById("slider");
-		var txt = "";
-		txt += "<form class='sliderFrame' oninput='timeDisplay.value=figure.rel_date_str(1000*currTime.value)'>";
-		txt += "<input class='timeSlider' type='range' id='currTime' name='currTime' min='0' max='"+figure.file.duration+"' value='0' oninput='figure.set_time(this.value)'>";
-		txt += "<output id='timeDisplay' name='timeDisplay' for='currTime'></output></form>";
-		slider.innerHTML = txt;
-		requestAnimationFrame(function () {
-			timeDisplay = document.getElementById("timeDisplay");
-			timeDisplay.value = figure.rel_date_str(1000*currTime.value);
-		});
-	}
-
 	function setup(evt) {
 		var fileSelector = document.getElementById('fileSelector');
 		fileSelector.addEventListener("onchange", load_selected_file);
-		load_selected_file();
+		if (fileSelector.value != "") {
+			load_selected_file();
+		}
 	}
 
 </script>

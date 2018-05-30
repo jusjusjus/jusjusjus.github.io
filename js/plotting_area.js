@@ -105,6 +105,7 @@ var PlottingArea = function (element_id, edffile) {
   self.channels = function () { return self.file.channels; };
   self.del = del;
   self.rel_date_str = rel_date_str;
+  self.duration = self.file.duration;
   self.create_new_plot = create_new_plot;
   self.switch_selection = switch_selection;
   self.set_time = set_time;
