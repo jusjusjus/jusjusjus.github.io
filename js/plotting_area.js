@@ -1,13 +1,12 @@
 
 'use strict'
 
-var PlottingArea = function (element_id, edffile) {
+var PlottingArea = function (element_id, edffile, self) {
+  self = self || {};
 
-  var self = {
-    'element_id': element_id,
-    'element': function () { return document.getElementById(self.element_id); },
-    'file': edffile
-  };
+  self.element_id = element_id;
+  self.element = function () { return document.getElementById(self.element_id); };
+  self.file = edffile;
 
   var config = {
     displayModeBar: false,
@@ -20,15 +19,15 @@ var PlottingArea = function (element_id, edffile) {
     self.element().innerHTML = '';
   }
 
-  function get_selected_channels() {
-    var selected_channels = [];
+  function get_selected_labels() {
+    var selected_labels = [];
     for (var c in self.file.channels) {
       var C = self.file.channels[c];
       if (C.selected) {
-        selected_channels.push(C);
+        selected_labels.push(C.label);
       }
     }
-    return selected_channels;
+    return selected_labels;
   }
 
   function switch_selection(c, callback) {
@@ -43,14 +42,14 @@ var PlottingArea = function (element_id, edffile) {
   }
 
   function create_drawing_area() {
-    var selected_channels = get_selected_channels();
-    var txt = "<div class='drawingArea' id='drawingArea' style='height:"+100*selected_channels.length+"px;width:100%;'></div>";
+    var selected_labels = get_selected_labels();
+    var txt = "<div class='drawingArea' id='drawingArea' style='height:"+100*selected_labels.length+"px;width:100%;'></div>";
     self.element().innerHTML = txt;
   }
 
   function create_new_plot() {
-    var selected_channels = get_selected_channels();
-    if (selected_channels.length == 0) {
+    var selected_labels = get_selected_labels();
+    if (selected_labels.length == 0) {
       self.element().innerHTML = "";
       return;
     }
@@ -64,16 +63,16 @@ var PlottingArea = function (element_id, edffile) {
       xaxis: {title: "relative time (sec.)"},
       margin: { t: 0, b: 30, l: 40, r: 20 }
     };
-    var domain = Array.from(new Array(selected_channels.length+1), (val, idx)=>idx/selected_channels.length)
-    for (var c in selected_channels) {
+    var domain = Array.from(new Array(selected_labels.length+1), (val, idx)=>idx/selected_labels.length)
+    var Y = self.file.get_physical_samples(window_start, window_duration, selected_labels);
+    for (var c in selected_labels) {
       var c1 = Number(c)+1;
       // data
-      var C = selected_channels[c];
-      var y = C.get_physical_samples(window_start, window_duration);
-      var dt = 1/C.sampling_rate();
-      var x = Float32Array.from(new Array(y.length), (val, idx)=>idx*dt)
+      var l = selected_labels[c];
+      var sr = self.file.sampling_rate[l];
+      var x = Float32Array.from(new Array(Y[l].length), (val, idx)=>idx/sr);
       var data = {
-        x: x, y: y,
+        x: x, y: Y[l],
         mode: "lines",
         line: { color: "rgb(0.0, 0.0, 0.0)", width: 1.0 },
         yaxis: "y"+c1
@@ -83,7 +82,7 @@ var PlottingArea = function (element_id, edffile) {
       layout['yaxis'+c1] = {
         zeroline: false,
         domain: [domain[c], domain[c1]],
-        title: C.label
+        title: l
       };
       traces.push(data);
     }
@@ -93,12 +92,13 @@ var PlottingArea = function (element_id, edffile) {
   function set_time(time=0.0) {
     window_start = time;
     drawingArea = document.getElementById("drawingArea");
-    var selected_channels = get_selected_channels();
-    for (var c in selected_channels) {
-      var C = selected_channels[c];
-      var y = C.get_physical_samples(window_start, window_duration);
-      var x = Float32Array.from(new Array(y.length), (val, idx)=>idx/C.sampling_rate())
-      Plotly.restyle(drawingArea, {'x': x, 'y': y}, c);
+    var selected_labels = get_selected_labels();
+    var Y = self.file.get_physical_samples(window_start, window_duration, selected_labels);
+    for (var c in selected_labels) {
+      var l = selected_labels[c];
+      var sr = self.file.sampling_rate[l];
+      var x = Float32Array.from(new Array(Y[l].length), (val, idx)=>idx/sr)
+      Plotly.restyle(drawingArea, {'x': x, 'y': Y[l]}, c);
     }
   }
 
