@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type='text/css' href="../css/edfbase.css"></style>
+<link rel="stylesheet" type='text/css' href="../css/edfdataviewer.css"></style>
+<!-- Load scripts locally -->
+<script src="../js/plotly-latest.min.js"></script>
+<script src="../js/edf-0.1.0.min.js"></script>
+<script src="../js/tfjs-0.11.2-mod.js"></script>
+<!-- Load scripts from CDNs -->
+<script type="text/javascript">
+  if (typeof edfjs == 'undefined') {
+    document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/b1696d8c/dist/releases/edf-0.1.0.min.js' type='text/javascript'%3E%3C/script%3E"));
+  }
+  if (typeof Plotly == 'undefined') {
+    document.write(unescape("%3Cscript src='https://cdn.plot.ly/plotly&#45;latest.min.js' type='text/javascript'%3E%3C/script%3E"));
+  }
+</script>
+<script src="../js/fili.min.js"></script>
+<script src="../js/filtered_edf.js" type="module"></script>
+<script src="../js/plotting_area.js"></script>
+<script src="../js/slider.js"></script>
+<script>
+	var edffile = null;
+	var figure = null;
+	var slider = null;
+
+	async function load_selected_file () {
+		var files = document.getElementById('fileSelector').files;
+    edffile = await FilteredEDF().from_file(files[0], files_loaded, header_only=false);
+	}
+
+	function files_loaded (evt=null) {
+		figure = PlottingArea("figure", edffile);
+		refresh_navbar();
+		slider = Slider('slider', figure).build();
+	}
+
+	function clear_filecache () {
+    figure.del();
+		slider.del();
+		delete figure;
+		delete slider;
+		delete edffile;
+		edffile = null;
+		figure = null;
+		slider = null;
+		refresh_navbar();
+		document.getElementById('fileSelector').value = "";
+	}
+
+	function refresh_navbar() {
+    var nav = document.getElementById("nav");
+    var txt = "";
+    if (figure != null) {
+			var channels = figure.channels();
+      for (var c in figure.channels()) {
+        var C = channels[c];
+        txt += "<li";
+        if (C.selected) {
+          txt += " class='selected'";
+        } else {
+          txt += " class='unselected'";
+        }
+        txt += " onclick='figure.switch_selection("+c+", refresh_navbar)'>"+C.label+"</li>";
+      }
+      txt += "<li class='clear' onclick='clear_filecache()'>Clear</li>";
+    }
+    nav.innerHTML = txt;
+	}
+
+	function setup(evt) {
+		var fileSelector = document.getElementById('fileSelector');
+		fileSelector.addEventListener("onchange", load_selected_file);
+		if (fileSelector.value != "") {
+			load_selected_file();
+		}
+	}
+
+</script>
+</head>
+<body onload="setup()">
+
+<div class="container">
+
+<header>
+	<h3>EDF Staging Controller (BETA Version)</h3>
+	<hr>
+  <div style="text-align:right">
+    <label for="fileSelector">Choose file to analyze</label>
+    <input type="file" id="fileSelector" onchange="load_selected_file();" accept=".edf"/>
+  </div>
+</header>
+
+<div id="nav"></div>
+
+<article>
+<div class="figure" id="figure"></div>
+<div id="slider"></div>
+</article>
+
+<footer>Powered by <a href="https://plot.ly">plotly</a><br>
+	Copyright &copy; <a href="https://github.com/jusjusjus">jusjusjus</a></footer>
+
+</div>
+
+</body>
+</html>
+
