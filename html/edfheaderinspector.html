@@ -1,25 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8"/>
 <link rel="stylesheet" type='text/css' href="../css/edfbase.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfheaderinspector.css"></style>
 <!-- Load scripts locally -->
-<script src="../js/edf.js"></script>
+<script src="../js/edf-0.1.0.min.js"></script>
 <!-- Load scripts from CDNs -->
 <script type="text/javascript">
-  if (typeof EDF == 'undefined') {
-    document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/c75d3926/js/edf.js' type='text/javascript'%3E%3C/script%3E"));
+  if (typeof edfjs == 'undefined') {
+    document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/b1696d8c/dist/releases/edf-0.1.0.min.js' type='text/javascript'%3E%3C/script%3E"));
   }
 </script>
 <script>
 	var opened_files = [];
-	var edf = EDF();
 	var selected = null;
 
 	var load_selected_file = async function () {
 		var files = document.getElementById('fileSelector').files;
 		for (var f=0; f<files.length; f++) {
-			var edf = await EDF().from_file(files[f], files_loaded, header_only=true);
+			var edf = await edfjs.EDF().from_file(files[f], files_loaded, header_only=true);
 			opened_files.push(edf);
 		}
 	}
