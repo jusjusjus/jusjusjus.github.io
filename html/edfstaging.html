@@ -3,9 +3,10 @@
 <head>
 <link rel="stylesheet" type='text/css' href="../css/edfbase.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfdataviewer.css"></style>
+<link rel="stylesheet" type='text/css' href="../css/edfstaging.css"></style>
 <!-- Load scripts locally -->
 <script src="../js/plotly-latest.min.js"></script>
-<script src="../js/edf-0.1.0.min.js"></script>
+<script src="../js/edf.js"></script>
 <script src="../js/tfjs-0.11.2-mod.js"></script>
 <!-- Load scripts from CDNs -->
 <script type="text/javascript">
@@ -20,10 +21,32 @@
 <script src="../js/filtered_edf.js" type="module"></script>
 <script src="../js/plotting_area.js"></script>
 <script src="../js/slider.js"></script>
+<script src="../js/sleep_staging.js"></script>
 <script>
 	var edffile = null;
 	var figure = null;
 	var slider = null;
+	var model = null;
+  var dataloader = null;
+
+	async function load_model(num_layers=8) {
+		model = Model();
+		await model.load_model(num_layers);
+	}
+
+	function assert(condition, msg) {
+		if(!condition) {
+			console.error("Error: "+msg);
+			throw msg;
+		}
+	}
+
+  function build_dataloader() {
+		for (input_channel in model.config.input.channels) {
+			assert(input_channel in edffile.channel_by_label, input_channel+" not assigned");
+		}
+    dataloader = edffile.dataloader(model);
+  }
 
 	async function load_selected_file () {
 		var files = document.getElementById('fileSelector').files;
@@ -69,11 +92,48 @@
     nav.innerHTML = txt;
 	}
 
+	function refresh_channelselection() {
+		var txt = "";
+		if (model != null) {
+			txt += "<div class='tooltip'>";
+			txt += "<span class='tooltiptext'>Select Input Channels for Automatic Sleep Staging</span>";
+			for (i in model.config.input.channels) {
+				txt += "<div class='dropdown'>";
+				var input_channel = model.config.input.channels[i];
+				txt += "<button onclick='toggleDropdown(\""+input_channel+"\")' class='dropbtn'>";
+				txt += input_channel;
+				if (input_channel in edffile.channel_by_label) txt += " ("+edffile.channel_by_label[input_channel].label+")";
+				txt += "</button>";
+				txt += "<div id='"+input_channel+"' class='dropdown-content'>";
+				txt += "<ul>";
+				for (var c in edffile.channels) {
+					target_channel = edffile.channels[c].label;
+					txt += "<li onclick='channelSelected(\""+input_channel+"\", \""+target_channel+"\")'>"+target_channel+"</li>";
+				}
+				txt += "</ul>";
+				txt += "</div>";
+				txt += "</div>";
+      }
+			txt += "</div>";
+    }
+    document.getElementById("channelSelection").innerHTML = txt;
+	}
+
+	function channelSelected (input_channel, target_channel) {
+    edffile.channel_by_label[input_channel] = edffile.channel_by_label[target_channel];
+		refresh_channelselection();
+	}
+
+	function toggleDropdown (input_channel) {
+		document.getElementById(input_channel).classList.toggle("show");
+	}
+
 	function setup(evt) {
 		var fileSelector = document.getElementById('fileSelector');
 		fileSelector.addEventListener("onchange", load_selected_file);
 		if (fileSelector.value != "") {
 			load_selected_file();
+      load_model();
 		}
 	}
 
@@ -93,6 +153,8 @@
 </header>
 
 <div id="nav"></div>
+
+<div id="channelSelection"></div>
 
 <article>
 <div class="figure" id="figure"></div>

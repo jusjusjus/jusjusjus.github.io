@@ -1,4 +1,5 @@
 
+
 // var get_filter = function (fs, fc) {
 //   var iirCalculator = new Fili.CalcCascades();
 //   var availableFilters = iirCalculator.available();
@@ -24,6 +25,10 @@ var linear_downsample = function (X, sr_old, sr_new) {
   return x
 }
 
+function assert(condition, msg) {
+  if (!condition) console.error(msg);
+}
+
 var FilteredEDF = function (self={}) {
   self = edfjs.EDF(self);
   var parent = {
@@ -34,13 +39,50 @@ var FilteredEDF = function (self={}) {
   self.get_physical_samples = function(t0, dt, channels) {
     var Y = parent.get_physical_samples(t0, dt, channels);
     for (var label in Y) {
-      var sr_old = self.channel_by_label[label].sampling_rate;
-      var sr_new = self.sampling_rate[label];
-      if (sr_old !== sr_new) {
-        Y[label] = linear_downsample(Y[label], sr_old, sr_new);
+      if (label in self.sampling_rate) {
+        var sr_old = self.channel_by_label[label].sampling_rate;
+        var sr_new = self.sampling_rate[label];
+        if (sr_old !== sr_new) {
+          Y[label] = linear_downsample(Y[label], sr_old, sr_new);
+        }
       }
     }
     return Y;
+  }
+
+  self.build_dataset = function(model) {
+    var epoch_duration = model.config.input.duration;
+    var left = model.config.input.left;
+    var example_duration = left + epoch_duration + model.config.input.right;
+    self.num_examples = Math.floor(self.duration/epoch_duration);
+    self.model_input_channels = model.config.input.channels;
+    for (var l in self.model_input_channels) {
+      var label = self.model_input_channels[l]
+      assert(label in self.channel_by_label, "Input channel not assigned "+label);
+      self.sampling_rate[label] = model.config.input.sampling_rate;
+    }
+    
+    self.get_example = function(n) {
+      var t0 = epoch_duration*n-left;
+      t0 = t0 < 0.0 ? 0.0: t0;
+      if (t0+example_duration >= self.duration) {
+        t0 = self.duration - example_duration-0.1;
+      }
+      return self.get_physical_samples(t0, example_duration, self.model_input_channels);
+    }
+    return self;
+  }
+
+  self.dataloader = function(model) {
+    var obj = {};
+    obj.dset = self.build_dataset(model);
+    obj.length = obj.dset.num_examples;
+    obj.get = function(n) {
+      assert(n < obj.length && n >= 0, "Requested sample out of bounds "+n);
+      var X = obj.dset.get_example(n);
+      return X;
+    }
+    return obj;
   }
 
   return self;

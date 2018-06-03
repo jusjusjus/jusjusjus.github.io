@@ -689,10 +689,8 @@
     }
   }
   function parseTupleParam$1(e) {
-    return 'number' == typeof e ? [
-      e,
-      e
-    ] : e
+    e = 'number' == typeof e ? [e, e] : e;
+    return e.length === 1 ? [e[0], e[0]] : e
   }
   function tupleValuesAreOne(e) {
     var t = parseTupleParam$1(e),
@@ -6754,7 +6752,7 @@ assert(3 === u.rank, 'Error in conv1d: input must be rank 3, but got rank ' + u.
 assert(3 === r.rank, 'Error in conv1d: filter must be rank 3, but got rank ' + r.rank + '.'),
 null != s && assert(isInt(a), 'Error in conv1d: pad must be an integer when using, dimRoundingMode ' + s + ' but got pad ' + a + '.'),
 assert(u.shape[2] === r.shape[1], 'Error in conv1d: depth of input (' + u.shape[2] + ') must match input depth for filter ' + r.shape[1] + '.'),
-assert(eitherStridesOrDilationsAreOne(n, i), 'Error in conv1D: Either stride or dilation must be 1. Got stride ' + n + ' and dilation \'' + i + '\''),
+// assert(eitherStridesOrDilationsAreOne(n, i), 'Error in conv1D: Either stride or dilation must be 1. Got stride ' + n + ' and dilation \'' + i + '\''),
 assert('NWC' === o, 'Error in conv1d: got dataFormat of ' + o + ' but only NWC is currently supported.');
 var c = r.as4D(1, r.shape[0], r.shape[1], r.shape[2]),
 p = u.as4D(u.shape[0], 1, u.shape[1], u.shape[2]),
@@ -6786,7 +6784,7 @@ assert(4 === u.rank, 'Error in conv2d: input must be rank 4, but got rank ' + u.
 assert(4 === r.rank, 'Error in conv2d: filter must be rank 4, but got rank ' + r.rank + '.'),
 null != s && assert(isInt(a), 'Error in conv2d: pad must be an integer when using, dimRoundingMode ' + s + ' but got pad ' + a + '.'),
 assert(u.shape[3] === r.shape[2], 'Error in conv2d: depth of input (' + u.shape[3] + ') must match input depth for filter ' + r.shape[2] + '.'),
-assert(eitherStridesOrDilationsAreOne(n, i), 'Error in conv2D: Either strides or dilations must be 1. Got strides ' + n + ' and dilations \'' + i + '\''),
+// assert(eitherStridesOrDilationsAreOne(n, i), 'Error in conv2D: Either strides or dilations must be 1. Got strides ' + n + ' and dilations \'' + i + '\''),
 assert('NHWC' === o, 'Error in conv2d: got dataFormat of ' + o + ' but only NHWC is currently supported.');
 var c = computeConv2DInfo(u.shape, r.shape, n, i, a, s),
 p = ENV.engine.runKernel(function (e) {
