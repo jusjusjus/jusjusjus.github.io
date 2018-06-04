@@ -6,7 +6,7 @@
 <link rel="stylesheet" type='text/css' href="../css/edfstaging.css"></style>
 <!-- Load scripts locally -->
 <script src="../js/plotly-latest.min.js"></script>
-<script src="../js/edf.js"></script>
+<script src="../js/edf-0.1.0.min.js"></script>
 <script src="../js/tfjs-0.11.2-mod.js"></script>
 <!-- Load scripts from CDNs -->
 <script type="text/javascript">
@@ -29,20 +29,44 @@
 	var model = null;
   var dataloader = null;
 
-	async function load_model(num_layers=8) {
-		model = Model();
-		await model.load_model(num_layers);
+	function concatenate(resultConstructor, arrays) {
+			let length = 0;
+			for (var i in arrays) {
+					length += arrays[i].length;
+			}
+			let result = new resultConstructor(length);
+			let offset = 0;
+			for (var i in arrays) {
+					result.set(arrays[i], offset);
+					offset += arrays[i].length;
+			}
+			return result;
 	}
 
-	function assert(condition, msg) {
-		if(!condition) {
-			console.error("Error: "+msg);
-			throw msg;
+	async function predict() {
+		build_dataloader();
+		for (var i=0; i<dataloader.length; i++) {
+			const T = dataloader.get(i);
+			const Y = await model.predict(T);
+			console.log(Y.print());
+			break;
 		}
 	}
 
+	async function load_model(num_layers=8) {
+		model = Model();
+		await model.load_model(num_layers);
+    edffile.channel_by_label['EEG1'] = edffile.channel_by_label['EEG C3-A2'];
+    edffile.channel_by_label['EEG2'] = edffile.channel_by_label['EEG C4-A1'];
+    edffile.channel_by_label['EOG1'] = edffile.channel_by_label['EOG Left'];
+    edffile.channel_by_label['EOG2'] = edffile.channel_by_label['EOG Right'];
+    edffile.channel_by_label['EMG'] = edffile.channel_by_label['EMG Chin'];
+		refresh_channelselection();
+	}
+
   function build_dataloader() {
-		for (input_channel in model.config.input.channels) {
+		for (i in model.config.input.channels) {
+			var input_channel = model.config.input.channels[i];
 			assert(input_channel in edffile.channel_by_label, input_channel+" not assigned");
 		}
     dataloader = edffile.dataloader(model);
@@ -56,7 +80,7 @@
 	function files_loaded (evt=null) {
 		figure = PlottingArea("figure", edffile);
 		refresh_navbar();
-		slider = Slider('slider', figure).build();
+		slider = Slider('slider', figure, 0.5).build();
 	}
 
 	function clear_filecache () {
@@ -94,11 +118,10 @@
 
 	function refresh_channelselection() {
 		var txt = "";
-		if (model != null) {
-			txt += "<div class='tooltip'>";
-			txt += "<span class='tooltiptext'>Select Input Channels for Automatic Sleep Staging</span>";
+		if (model != null && edffile != null && edffile.channel_by_label != null) {
 			for (i in model.config.input.channels) {
-				txt += "<div class='dropdown'>";
+				txt += "<div class='dropdown tooltip'>";
+				txt += "<span class='tooltiptext'>Select Input Channels for Automatic Sleep Staging</span>";
 				var input_channel = model.config.input.channels[i];
 				txt += "<button onclick='toggleDropdown(\""+input_channel+"\")' class='dropbtn'>";
 				txt += input_channel;
@@ -114,7 +137,7 @@
 				txt += "</div>";
 				txt += "</div>";
       }
-			txt += "</div>";
+			txt += "<button onclick='predict()' class='dropbtn exec'>Predict Stages</button>";
     }
     document.getElementById("channelSelection").innerHTML = txt;
 	}
@@ -128,12 +151,25 @@
 		document.getElementById(input_channel).classList.toggle("show");
 	}
 
-	function setup(evt) {
+	async function setup(evt) {
 		var fileSelector = document.getElementById('fileSelector');
 		fileSelector.addEventListener("onchange", load_selected_file);
 		if (fileSelector.value != "") {
-			load_selected_file();
-      load_model();
+			await load_selected_file();
+      await setTimeoutAsync(load_model, 2000);
+		}
+	}
+
+	function setTimeoutAsync(callback, msec) { 
+		return new Promise(resolve => {
+			setTimeout(() => {resolve(callback());}, msec);
+		});
+	}
+
+	function assert(condition, msg) {
+		if(!condition) {
+			console.error("Error: "+msg);
+			throw msg;
 		}
 	}
 

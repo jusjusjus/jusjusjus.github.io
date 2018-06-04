@@ -1,6 +1,9 @@
 
 function assert(condition, msg) {
-  if (!condition) console.log(msg);
+  if (!condition) {
+    console.error(msg);
+    throw msg;
+  }
 }
 
 function readTextFile(file, callback) {
@@ -20,7 +23,7 @@ var Model = function (self) {
   self.net = null;
 
   function load_config(filename) {
-    readTextFile(filename, function(text){
+    readTextFile(filename, async function(text) {
         self.config = JSON.parse(text);
     });
   }
@@ -29,8 +32,8 @@ var Model = function (self) {
     if (self.net) { console.log("Warning re-loading net"); }
     var modelfile = '../models/humans/production/num_layers_'+num_layers+'/model/model.json'
     var configfile = '../models/humans/production/num_layers_'+num_layers+'/model/config.json'
-    self.net = await tf.loadModel(modelfile);
     self.load_config(configfile);
+    self.net = await tf.loadModel(modelfile);
   }
 
   function input_sampling_rate() {
@@ -38,11 +41,11 @@ var Model = function (self) {
   }
 
   async function predict(input) {
-    if (self.net) { self.load_model(); }
+    if (self.net == null) { self.load_model(); }
     assert(input.shape.length == 3, "Wrong input shape "+input.shape);
     assert(input.shape[1] == self.config.input.length, "Wrong input shape "+input.shape);
     assert(input.shape[2] == self.config.input.channels.length, "Wrong input shape "+input.shape);
-    const output = await self.net(input);
+    const output = await self.net.predict(input);
     return output;
   }
   self.load_model = load_model;

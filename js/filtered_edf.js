@@ -56,13 +56,14 @@ var FilteredEDF = function (self={}) {
     var example_duration = left + epoch_duration + model.config.input.right;
     self.num_examples = Math.floor(self.duration/epoch_duration);
     self.model_input_channels = model.config.input.channels;
+    self.samples_per_segment = model.config.input.length;
     for (var l in self.model_input_channels) {
       var label = self.model_input_channels[l]
       assert(label in self.channel_by_label, "Input channel not assigned "+label);
       self.sampling_rate[label] = model.config.input.sampling_rate;
     }
     
-    self.get_example = function(n) {
+    self.get = function(n) {
       var t0 = epoch_duration*n-left;
       t0 = t0 < 0.0 ? 0.0: t0;
       if (t0+example_duration >= self.duration) {
@@ -77,10 +78,14 @@ var FilteredEDF = function (self={}) {
     var obj = {};
     obj.dset = self.build_dataset(model);
     obj.length = obj.dset.num_examples;
+    obj.channels = obj.dset.model_input_channels.length;
+    obj.samples_per_segment = obj.dset.samples_per_segment
     obj.get = function(n) {
       assert(n < obj.length && n >= 0, "Requested sample out of bounds "+n);
-      var X = obj.dset.get_example(n);
-      return X;
+      var X = concatenate(Float32Array, obj.dset.get(n));
+      return tf.transpose(
+        tf.tensor3d(X, [1, obj.channels, obj.samples_per_segment]),
+        [0, 2, 1]);
     }
     return obj;
   }
