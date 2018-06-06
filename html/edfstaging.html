@@ -6,41 +6,50 @@
 <link rel="stylesheet" type='text/css' href="../css/edfstaging.css"></style>
 <!-- Load scripts locally -->
 <script src="../js/plotly-latest.min.js"></script>
-<script src="../js/edf-0.1.0.min.js"></script>
+<!-- <script src="../js/edf&#45;0.1.0.min.js"></script> -->
+<script src="../js/edf.js"></script>
 <script src="../js/tfjs-0.11.2-mod.js"></script>
+<script src="../js/papaparse.min.js"></script>
 <!-- Load scripts from CDNs -->
 <script type="text/javascript">
-  if (typeof edfjs == 'undefined') {
-    document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/b1696d8c/dist/releases/edf-0.1.0.min.js' type='text/javascript'%3E%3C/script%3E"));
-  }
-  if (typeof Plotly == 'undefined') {
-    document.write(unescape("%3Cscript src='https://cdn.plot.ly/plotly&#45;latest.min.js' type='text/javascript'%3E%3C/script%3E"));
-  }
+  // if (typeof edfjs == 'undefined') {
+  //   document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/b1696d8c/dist/releases/edf-0.1.0.min.js' type='text/javascript'%3E%3C/script%3E"));
+  // }
+  // if (typeof Plotly == 'undefined') {
+  //   document.write(unescape("%3Cscript src='https://cdn.plot.ly/plotly&#45;latest.min.js' type='text/javascript'%3E%3C/script%3E"));
+  // }
 </script>
 <script src="../js/fili.min.js"></script>
 <script src="../js/filtered_edf.js" type="module"></script>
 <script src="../js/plotting_area.js"></script>
 <script src="../js/slider.js"></script>
-<script src="../js/sleep_staging.js"></script>
+<script src="../js/sleep_staging_model.js"></script>
+<script src="../js/annotations.js"></script>
 <script>
 	var edffile = null;
 	var figure = null;
 	var slider = null;
 	var model = null;
   var dataloader = null;
+	var annotations = null;
 
 	function concatenate(resultConstructor, arrays) {
-			let length = 0;
-			for (var i in arrays) {
-					length += arrays[i].length;
-			}
-			let result = new resultConstructor(length);
-			let offset = 0;
-			for (var i in arrays) {
-					result.set(arrays[i], offset);
-					offset += arrays[i].length;
-			}
-			return result;
+		let length = 0;
+		for (var i in arrays) {
+      length += arrays[i].length;
+		}
+		let result = new resultConstructor(length);
+		let offset = 0;
+		for (var i in arrays) {
+      result.set(arrays[i], offset);
+      offset += arrays[i].length;
+		}
+		return result;
+	}
+
+	function load_selected_annots() {
+		var files = document.getElementById('scoreSelector').files;
+		annotations = Annotations().load(files[0]);
 	}
 
 	async function predict() {
@@ -74,24 +83,17 @@
 
 	async function load_selected_file () {
 		var files = document.getElementById('fileSelector').files;
-    edffile = await FilteredEDF().from_file(files[0], files_loaded, header_only=false);
-	}
-
-	function files_loaded (evt=null) {
+		console.log("loading", files[0]);
+    edffile = await FilteredEDF().from_file(files[0], header_only=false);
 		figure = PlottingArea("figure", edffile);
 		refresh_navbar();
 		slider = Slider('slider', figure, 0.5).build();
 	}
 
 	function clear_filecache () {
-    figure.del();
-		slider.del();
-		delete figure;
-		delete slider;
-		delete edffile;
-		edffile = null;
-		figure = null;
-		slider = null;
+    figure.del(); delete figure; figure = null;
+		slider.del(); delete slider; slider = null;
+		delete edffile; edffile = null;
 		refresh_navbar();
 		document.getElementById('fileSelector').value = "";
 	}
@@ -116,9 +118,10 @@
     nav.innerHTML = txt;
 	}
 
-	function refresh_channelselection() {
+	async function refresh_channelselection() {
 		var txt = "";
 		if (model != null && edffile != null && edffile.channel_by_label != null) {
+      await model.config;
 			for (i in model.config.input.channels) {
 				txt += "<div class='dropdown tooltip'>";
 				txt += "<span class='tooltiptext'>Select Input Channels for Automatic Sleep Staging</span>";
@@ -154,10 +157,15 @@
 	async function setup(evt) {
 		var fileSelector = document.getElementById('fileSelector');
 		fileSelector.addEventListener("onchange", load_selected_file);
+		// var scoreSelector = document.getElementById('scoreSelector');
+		// scoreSelector.addEventListener("onchange", load_selected_annots);
 		if (fileSelector.value != "") {
-			await load_selected_file();
-      await setTimeoutAsync(load_model, 2000);
+      await load_selected_file();
+      load_model();
 		}
+		// if (scoreSelector.value != "") {
+		// 	load_selected_annots();
+		// }
 	}
 
 	function setTimeoutAsync(callback, msec) { 
@@ -183,8 +191,10 @@
 	<h3>EDF Staging Controller (BETA Version)</h3>
 	<hr>
   <div style="text-align:right">
-    <label for="fileSelector">Choose file to analyze</label>
-    <input type="file" id="fileSelector" onchange="load_selected_file();" accept=".edf"/>
+    <label for="fileSelector">EDF-file</label>
+    <input type="file" id="fileSelector" accept=".edf"/>
+    <label for="scoreSelector">Score file</label>
+    <input type="file" id="scoreSelector" accept=".csv,.json"/>
   </div>
 </header>
 
