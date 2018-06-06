@@ -36,18 +36,20 @@ var FilteredEDF = function (self={}) {
     channel_by_label: self.channel_by_label
   };
 
-  self.get_physical_samples = function(t0, dt, channels) {
-    var Y = parent.get_physical_samples(t0, dt, channels);
-    for (var label in Y) {
-      if (label in self.sampling_rate) {
-        var sr_old = self.channel_by_label[label].sampling_rate;
-        var sr_new = self.sampling_rate[label];
-        if (sr_old !== sr_new) {
-          Y[label] = linear_downsample(Y[label], sr_old, sr_new);
+  self.get_physical_samples = async function(t0, dt, channels) {
+    return new Promise( function (resolve, reject) {
+      var Y = parent.get_physical_samples(t0, dt, channels);
+      for (var label in Y) {
+        if (label in self.sampling_rate) {
+          var sr_old = self.channel_by_label[label].sampling_rate;
+          var sr_new = self.sampling_rate[label];
+          if (sr_old !== sr_new) {
+            Y[label] = linear_downsample(Y[label], sr_old, sr_new);
+          }
         }
       }
-    }
-    return Y;
+      resolve(Y);
+    });
   }
 
   self.build_dataset = function(model) {
