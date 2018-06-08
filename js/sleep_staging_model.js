@@ -31,7 +31,6 @@ var Model = function (self) {
       readPlainText(filename).then( function (txt) {
         var txt = JSON.parse(txt);
         resolve(txt);
-        self.config = txt;
       });
     });
   }
@@ -40,9 +39,8 @@ var Model = function (self) {
     assert(self.net === null, "Warning re-loading net");
     var modelfile = '../models/humans/production/num_layers_'+num_layers+'/model/model.json'
     var configfile = '../models/humans/production/num_layers_'+num_layers+'/model/config.json'
-    self.config = load_config(configfile);
-    self.net = tf.loadModel(modelfile);
-    await Promise.all([self.config, self.net]);
+    self.config = await load_config(configfile);
+    self.net = await tf.loadModel(modelfile);
   }
 
   function input_sampling_rate() {
