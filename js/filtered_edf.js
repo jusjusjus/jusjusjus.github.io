@@ -37,8 +37,8 @@ var FilteredEDF = function (self={}) {
   };
 
   self.get_physical_samples = async function(t0, dt, channels) {
+    var Y = await parent.get_physical_samples(t0, dt, channels);
     return new Promise( function (resolve, reject) {
-      var Y = parent.get_physical_samples(t0, dt, channels);
       for (var label in Y) {
         if (label in self.sampling_rate) {
           var sr_old = self.channel_by_label[label].sampling_rate;
@@ -52,11 +52,11 @@ var FilteredEDF = function (self={}) {
     });
   }
 
-  self.build_dataset = function(model) {
-    var epoch_duration = model.config.input.duration;
-    var left = model.config.input.left;
-    var example_duration = left + epoch_duration + model.config.input.right;
-    self.num_examples = Math.floor(self.duration/epoch_duration);
+  self.set_model = function(model) {
+    var E = model.config.input.duration;
+    var L = model.config.input.left;
+    var example_duration = L + E + model.config.input.right;
+    self.num_examples = Math.floor(self.duration/E);
     self.model_input_channels = model.config.input.channels;
     self.samples_per_segment = model.config.input.length;
     for (var l in self.model_input_channels) {
@@ -64,9 +64,8 @@ var FilteredEDF = function (self={}) {
       assert(label in self.channel_by_label, "Input channel not assigned "+label);
       self.sampling_rate[label] = model.config.input.sampling_rate;
     }
-    
     self.get = function(n) {
-      var t0 = epoch_duration*n-left;
+      var t0 = E*n-L;
       t0 = t0 < 0.0 ? 0.0: t0;
       if (t0+example_duration >= self.duration) {
         t0 = self.duration - example_duration-0.1;
@@ -76,20 +75,19 @@ var FilteredEDF = function (self={}) {
     return self;
   }
 
-  self.dataloader = function(model) {
-    var obj = {};
-    obj.dset = self.build_dataset(model);
-    obj.length = obj.dset.num_examples;
-    obj.channels = obj.dset.model_input_channels.length;
-    obj.samples_per_segment = obj.dset.samples_per_segment
-    obj.get = function(n) {
-      assert(n < obj.length && n >= 0, "Requested sample out of bounds "+n);
-      var X = concatenate(Float32Array, obj.dset.get(n));
+  self.dataloader = function() {
+    var loader = {};
+    var num_channels = self.model_input_channels.length;
+    var samples_per_segment = self.samples_per_segment
+    loader.length = self.num_examples;
+    loader.get = async function(n) {
+      assert((0 <= n) && (n < loader.length), "Requested sample out of bounds "+n);
+      var X = concatenate(Float32Array, await self.get(n));
       return tf.transpose(
-        tf.tensor3d(X, [1, obj.channels, obj.samples_per_segment]),
+        tf.tensor3d(X, [1, num_channels, samples_per_segment]),
         [0, 2, 1]);
     }
-    return obj;
+    return loader;
   }
 
   return self;
