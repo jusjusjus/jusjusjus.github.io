@@ -22,12 +22,14 @@
 <script src="../js/fili.min.js"></script>
 <script src="../js/filtered_edf.js" type="module"></script>
 <script src="../js/plotting_area.js"></script>
+<script src="../js/hypnogram.js"></script>
 <script src="../js/slider.js"></script>
 <script src="../js/sleep_staging_model.js"></script>
 <script src="../js/annotations.js"></script>
 <script>
 	var edffile = null;
 	var figure = null;
+	var hypnogram = null;
 	var slider = null;
 	var model = null;
   var dataloader = null;
@@ -47,18 +49,25 @@
 		return result;
 	}
 
-	function load_selected_annots() {
+	async function load_selected_annots() {
 		var files = document.getElementById('scoreSelector').files;
-		annotations = Annotations().load(files[0]);
+		annotations = await Annotations().load(files[0]);
+	}
+
+	async function predict_current_stage() {
+		if (dataloader === null) build_dataloader();
+		console.log(slider.value);
+		const T = await dataloader.get(slider.value);
+		const Y = await model.predict(T);
+		console.log(Y.print());
 	}
 
 	async function predict() {
 		build_dataloader();
 		for (var i=0; i<dataloader.length; i++) {
-			const T = dataloader.get(i);
+			const T = await dataloader.get(i);
 			const Y = await model.predict(T);
 			console.log(Y.print());
-			break;
 		}
 	}
 
@@ -74,20 +83,22 @@
 	}
 
   function build_dataloader() {
-		for (i in model.config.input.channels) {
-			var input_channel = model.config.input.channels[i];
-			assert(input_channel in edffile.channel_by_label, input_channel+" not assigned");
-		}
+		edffile.set_model(model);
     dataloader = edffile.dataloader(model);
   }
 
 	async function load_selected_file () {
 		var files = document.getElementById('fileSelector').files;
-		console.log("loading", files[0]);
     edffile = await FilteredEDF().from_file(files[0], header_only=false);
-		figure = PlottingArea("figure", edffile);
+		figure = PlottingArea("figure", edffile, 30.0);
 		refresh_navbar();
-		slider = Slider('slider', figure, 0.5).build();
+		slider = Slider("slider", [figure], 30.0).build();
+	}
+
+	async function show_hypnogram() {
+		hypnogram = Hypnogram("hypnogram", annotations);
+		hypnogram.create_new_plot();
+		slider.register(hypnogram);
 	}
 
 	function clear_filecache () {
@@ -140,7 +151,8 @@
 				txt += "</div>";
 				txt += "</div>";
       }
-			txt += "<button onclick='predict()' class='dropbtn exec'>Predict Stages</button>";
+			txt += "<button onclick='predict()' class='dropbtn exec'>Predict All Stages</button>";
+			txt += "<button onclick='predict_current_stage()' class='dropbtn exec'>Predict Current Stage</button>";
     }
     document.getElementById("channelSelection").innerHTML = txt;
 	}
@@ -156,16 +168,15 @@
 
 	async function setup(evt) {
 		var fileSelector = document.getElementById('fileSelector');
-		fileSelector.addEventListener("onchange", load_selected_file);
-		// var scoreSelector = document.getElementById('scoreSelector');
-		// scoreSelector.addEventListener("onchange", load_selected_annots);
+		var scoreSelector = document.getElementById('scoreSelector');
 		if (fileSelector.value != "") {
       await load_selected_file();
       load_model();
 		}
-		// if (scoreSelector.value != "") {
-		// 	load_selected_annots();
-		// }
+		if (scoreSelector.value != "") {
+			await load_selected_annots();
+			show_hypnogram();
+		}
 	}
 
 	function setTimeoutAsync(callback, msec) { 
@@ -192,9 +203,11 @@
 	<hr>
   <div style="text-align:right">
     <label for="fileSelector">EDF-file</label>
-    <input type="file" id="fileSelector" accept=".edf"/>
+    <input type="file" id="fileSelector" onchange="load_selected_file()" accept=".edf"/>
+  </div>
+  <div style="text-align:right">
     <label for="scoreSelector">Score file</label>
-    <input type="file" id="scoreSelector" accept=".csv,.json"/>
+    <input type="file" id="scoreSelector" onchange="load_selected_annots()" accept=".csv,.json"/>
   </div>
 </header>
 
@@ -204,6 +217,7 @@
 
 <article>
 <div class="figure" id="figure"></div>
+<div class="figure" id="hypnogram"></div>
 <div id="slider"></div>
 </article>
 
