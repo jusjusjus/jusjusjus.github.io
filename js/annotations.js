@@ -78,22 +78,25 @@ var Annotations = function (self) {
   self.t0 = null;
   
   self.load = function (file) {
-    var filename = typeof file === "object" ? file.name : file;
-    if (filename.endsWith('.csv')) {
-      CSV().load(file, function (d) {
-        self.dt = d.dt[0];
-        for(var i in d.dt)
-          assert(d.dt[i] === self.dt, "Epoch "+i+"is too short.");
-        self.start = d.start;
-        self.labels = d.label;
-      });
-    } else if (filename.endsWith('.json')) {
-      JSON.parse(file, function (d) {
-        for (key in d)
-          self[key] = d[key];
-      });
-    }
-    return self;
+    return new Promise( function (resolve, reject) {
+      var filename = typeof file === "object" ? file.name : file;
+      if (filename.endsWith('.csv')) {
+        CSV().load(file, function (d) {
+          self.dt = d.dt[0];
+          for(var i in d.dt)
+            assert(d.dt[i] === self.dt, "Epoch "+i+"is too short.");
+          self.start = d.start;
+          self.labels = d.label;
+          resolve(self);
+        });
+      } else if (filename.endsWith('.json')) {
+        JSON.parse(file, function (d) {
+          for (key in d)
+            self[key] = d[key];
+          resolve(self);
+        });
+      }
+    })
   }
   return self;
 }
