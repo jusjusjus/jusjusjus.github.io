@@ -42,7 +42,7 @@ var PlottingArea = function (element_id, edffile, window_duration, self) {
     create_new_plot();
   }
   
-  function rel_date_str(millis) {
+  function slider_str(millis) {
     var date = self.file.relative_date(millis);
     return date.toUTCString();
   }
@@ -111,7 +111,7 @@ var PlottingArea = function (element_id, edffile, window_duration, self) {
 
   self.channels = function () { return self.file.channels; };
   self.del = del;
-  self.rel_date_str = rel_date_str;
+  self.slider_str = slider_str;
   self.duration = self.file.duration;
   self.create_new_plot = create_new_plot;
   self.switch_selection = switch_selection;

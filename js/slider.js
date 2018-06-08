@@ -1,17 +1,22 @@
 
-var Slider = function(element_id, figure, sec) {
+var Slider = function(element_id, figures, sec) {
   var self = {
-    'step': sec || 1.0,
-    'element_id': element_id,
-    'figure': figure
+    step: sec || 1.0,
+    element_id: element_id,
+    figures: figures,
+    value: 0
   };
+
+  self.register = function (el) {
+    self.figures.push(el);
+  }
 
   self.element = function () {
     return document.getElementById(self.element_id);
   }
 
   self.build = function () {
-    var max = parseInt(self.figure.duration/self.step);
+    var max = parseInt(self.figures[0].duration/self.step);
     var txt = "";
     txt += "<form id='sliderFrame' class='sliderFrame'>";
     txt += "<input class='timeSlider' type='range' id='currTime' name='currTime' min='0' max='"+max+"' value='0'>";
@@ -20,11 +25,16 @@ var Slider = function(element_id, figure, sec) {
     // add callbacks
     var frame = document.getElementById('sliderFrame');
     frame.addEventListener('input', function (e) {
-      var time = document.getElementById('currTime');
+      var sli = document.getElementById('currTime');
       var displ = document.getElementById('timeDisplay');
-      var t0 = self.step*time.value;
-      self.figure.set_time(t0);
-      displ.value = self.figure.rel_date_str(t0);
+      self.value = sli.value;
+      var t0 = self.step*self.value;
+      var txt = "";
+      for (var f in self.figures) {
+        self.figures[f].set_time(t0);
+        txt += self.figures[f].slider_str(t0);
+      }
+      displ.value = txt;
     });
     return self;
   }
