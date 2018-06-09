@@ -11,6 +11,15 @@ var Slider = function(element_id, figures, sec) {
     self.figures.push(el);
   }
 
+  self.remove = function (el) {
+    for (var f in self.figures) {
+      if (el === self.figures[f]) {
+        self.figures.splice(f, f+1);
+        return;
+      }
+    }
+  }
+
   self.element = function () {
     return document.getElementById(self.element_id);
   }
