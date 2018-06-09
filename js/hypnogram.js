@@ -39,6 +39,15 @@ var Hypnogram = function (element_id, annotations, self) {
     return {x:x, y:y};
   }
 
+  function labels2curve(labels) {
+    var x = [], y = [];
+    for (var l in labels) {
+      x.push(l*self.annotations.dt*sec2hour);
+      y.push(label2hash[labels[l]]);
+    }
+    return {x:[x], y:[y]};
+  }
+
   async function create_new_plot() {
     create_drawing_area();
     var traces = [];
@@ -53,13 +62,13 @@ var Hypnogram = function (element_id, annotations, self) {
     var traces = [];
     var trace = labels2curve(self.annotations.labels);
     var data = {
-      x: trace.x, y: trace.y,
+      x: trace.x[0], y: trace.y[0],
       mode: "lines",
       line: { color: "rgb(0.0, 0.0, 0.0)", width: 2.0 },
       yaxis: "y"
     };
     var vert = {
-      x: [1, 1], y: [0, 4],
+      x: [window_start, window_start], y: [0, 4],
       mode: "lines", 
       line: { color: "rgb(1.0, 0.0, 0.0)", width: 3.0 },
     };
@@ -81,17 +90,22 @@ var Hypnogram = function (element_id, annotations, self) {
   }
 
   function slider_str(t0) {
-    return "  Stage: "+self.annotations.labels[Math.floor(t0/30)];
+    var idx = Math.floor(t0/30);
+    var label = self.annotations.labels[idx]
+    var probs = self.annotations.probabilities[idx];
+    return "  Stage: "+label+" ("+toPercentStr(probs)+")";
   }
 
   function redraw() {
     var drawingArea = document.getElementById("hypnogramDrawingArea");
-    Plotly.restyle(drawingArea, labels2curve(self.annotations.labels));
+    Plotly.restyle(drawingArea, labels2curve(self.annotations.labels), 0);
   }
 
   self.del = del;
   self.set_time = set_time;
   self.slider_str = slider_str;
   self.create_new_plot = create_new_plot;
+  self.redraw = redraw;
+  self.labels2curve = labels2curve;
   return self;
 }
