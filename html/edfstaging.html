@@ -20,6 +20,7 @@
   // }
 </script>
 <script src="../js/fili.min.js"></script>
+<script src="../js/util.js"></script>
 <script src="../js/filtered_edf.js" type="module"></script>
 <script src="../js/plotting_area.js"></script>
 <script src="../js/hypnogram.js"></script>
@@ -35,20 +36,6 @@
   var dataloader = null;
 	var annotations = null;
 
-	function concatenate(resultConstructor, arrays) {
-		let length = 0;
-		for (var i in arrays) {
-      length += arrays[i].length;
-		}
-		let result = new resultConstructor(length);
-		let offset = 0;
-		for (var i in arrays) {
-      result.set(arrays[i], offset);
-      offset += arrays[i].length;
-		}
-		return result;
-	}
-
 	async function load_selected_annots() {
 		var files = document.getElementById('scoreSelector').files;
 		annotations = await Annotations().load(files[0]);
@@ -56,18 +43,94 @@
 
 	async function predict_current_stage() {
 		if (dataloader === null) build_dataloader();
-		console.log(slider.value);
+
 		const T = await dataloader.get(slider.value);
 		const Y = await model.predict(T);
-		console.log(Y.print());
+		var V = Y.buffer().values;
+
+		var txt = "Prob = ("+toPercentStr(V)+")";
+		document.getElementById('prediction').innerHTML = txt;
+
+		T.dispose()
+		Y.dispose()
 	}
+
+	// async function predictOnBatch(batch) {
+	// 	document.getElementById("prediction").innerHTML = "Example "+batch.length;
+	// }
+  //
+	// async function asyncPredict() {
+	// 	build_dataloader();
+	// 	const batch_size = 64;
+	// 	const num_classes = 5;
+	// 	var batch = [];
+	// 	annotations = Annotations(model.config.input.duration);
+	// 	show_hypnogram();
+	// 	var ii = 0;
+	// 	async function build_batch_and_predict() {
+	// 		var batch = [];
+	// 		console.log('ii', ii);
+	// 		for (ii; ii<dataloader.length; ii++) {
+	// 			var example = await dataloader.get(ii);
+	// 			batch.push(example);
+	// 			if(batch.length == batch_size) {
+	// 				predictOnBatch(batch);
+	// 				ii = i;
+	// 				window.requestAnimationFrame(build_batch_and_predict);
+	// 				break
+	// 			}
+	// 		}
+	// 	}
+	// 	window.requestAnimationFrame(build_batch_and_predict);
+	// }
 
 	async function predict() {
 		build_dataloader();
-		for (var i=0; i<dataloader.length; i++) {
-			const T = await dataloader.get(i);
-			const Y = await model.predict(T);
-			console.log(Y.print());
+		const batch_size = 64;
+		const num_classes = 5;
+		var batch = [];
+		annotations = Annotations(model.config.input.duration);
+		show_hypnogram();
+		for (var ii=0; ii<dataloader.length; ii++) {
+			batch.push(await dataloader.get(ii));
+			if (batch_size == batch.length) {
+				const result = tf.tidy( () => {
+					const T = tf.concat(batch, axis=0);
+					return model.predict(T);
+				});
+				var arr = result.buffer().values;
+				var probs = [];
+				for (var e=0; e<arr.length; e+=num_classes) {
+					probs.push(arr.slice(e, e+num_classes));
+				}
+				annotations.stream_probs(probs);
+				hypnogram.redraw();
+				result.dispose();
+				for(var b in batch) {
+					batch[b].dispose();
+				}
+				batch = [];
+			}
+			document.getElementById("prediction").innerHTML = "Example "+ii;
+		}
+		if (batch.length > 0) {
+			const result = tf.tidy( () => {
+				const T = tf.concat(batch, axis=0);
+				return model.predict(T);
+			});
+			var final_batch_size = result.shape[0];
+			var arr = result.buffer().values;
+			var probs = [];
+			for (var e=0; e<arr.length; e+=num_classes) {
+				probs.push(arr.slice(e, e+num_classes));
+			}
+			annotations.stream_probs(probs);
+			hypnogram.redraw();
+			result.dispose();
+			for(var b in batch) {
+				batch[b].dispose();
+			}
+			batch = [];
 		}
 	}
 
@@ -93,12 +156,23 @@
 		figure = PlottingArea("figure", edffile, 30.0);
 		refresh_navbar();
 		slider = Slider("slider", [figure], 30.0).build();
+		if (hypnogram !== null) {
+			slider.register(hypnogram);
+		}
+		if (model === null) {
+			load_model();
+		}
 	}
 
-	async function show_hypnogram() {
+	function show_hypnogram() {
+		if (hypnogram !== null && slider !== null) {
+			slider.remove(hypnogram);
+		}
 		hypnogram = Hypnogram("hypnogram", annotations);
 		hypnogram.create_new_plot();
-		slider.register(hypnogram);
+		if (slider !== null) {
+			slider.register(hypnogram);
+		}
 	}
 
 	function clear_filecache () {
@@ -152,7 +226,8 @@
 				txt += "</div>";
       }
 			txt += "<button onclick='predict()' class='dropbtn exec'>Predict All Stages</button>";
-			txt += "<button onclick='predict_current_stage()' class='dropbtn exec'>Predict Current Stage</button>";
+			// txt += "<button onclick='asyncPredict()' class='dropbtn exec'>Predict All Stages</button>";
+			// txt += "<button onclick='predict_current_stage()' class='dropbtn exec'>Predict Current Stage</button>";
     }
     document.getElementById("channelSelection").innerHTML = txt;
 	}
@@ -171,7 +246,6 @@
 		var scoreSelector = document.getElementById('scoreSelector');
 		if (fileSelector.value != "") {
       await load_selected_file();
-      load_model();
 		}
 		if (scoreSelector.value != "") {
 			await load_selected_annots();
@@ -219,6 +293,7 @@
 <div class="figure" id="figure"></div>
 <div class="figure" id="hypnogram"></div>
 <div id="slider"></div>
+<div id="prediction"></div>
 </article>
 
 <footer>Powered by <a href="https://plot.ly">plotly</a><br>
