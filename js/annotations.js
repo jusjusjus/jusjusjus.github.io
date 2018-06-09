@@ -69,13 +69,46 @@ var CSV = function (self) {
 }
 
 
-var Annotations = function (self) {
+var Annotations = function (dt, labels, self) {
+  dt = dt || null;
+  labels = labels || ['Wake', 'R', 'N1', 'N2', 'N3'];
   self = self || {};
 
-  self.dt = null;
-  self.labels = null;
-  self.start = null;
-  self.t0 = null;
+  var hash2label = labels
+  var label2hash = {}
+  for (var l in labels) {
+    label2hash[labels[l]] = l;
+  }
+
+  self.dt = dt;
+  self.labels = [];
+  self.start = [];
+  self.t0 = [];
+  self.probabilities = [];
+
+  self.stream_probs = function (probs) {
+    assert(self.dt !== null, "time step `Annotations.dt` not set.");
+    t00 = self.t0.length > 0 ? self.t0[self.t0.length-1]+self.dt : 0.0
+    self.t0.push(t00);
+    self.labels.push(hash2label[argmax(probs[0])]);
+    self.probabilities.push(probs[0]);
+    for(var i=1; i<probs.length; i++) {
+      self.t0.push(self.t0[self.t0.length-1]+self.dt);
+      self.labels.push(hash2label[argmax(probs[i])]);
+      self.probabilities.push(probs[i]);
+    }
+  }
+  
+  self.from_probs = function (dt, probs) {
+    self.dt = dt;
+    self.probabilities = probs;
+    self.labels = [];
+    self.t0 = Float32Array.from(new Float32Array(probs.length), (val, idx)=>dt*idx);
+    for(var i=0; i<probs.length; i++) {
+      self.labels.push(hash2label[argmax(probs[i])]);
+    }
+    return self;
+  }
   
   self.load = function (file) {
     return new Promise( function (resolve, reject) {
@@ -87,6 +120,11 @@ var Annotations = function (self) {
             assert(d.dt[i] === self.dt, "Epoch "+i+"is too short.");
           self.start = d.start;
           self.labels = d.label;
+          self.probabilities = []
+          for (var l in self.labels) {
+            var label = self.labels[l]
+            self.probabilities[l] = one_hot(label2hash[label], labels.length); 
+          }
           resolve(self);
         });
       } else if (filename.endsWith('.json')) {
