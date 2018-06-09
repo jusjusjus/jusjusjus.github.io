@@ -1,16 +1,24 @@
 
 
-// var get_filter = function (fs, fc) {
-//   var iirCalculator = new Fili.CalcCascades();
-//   var availableFilters = iirCalculator.available();
-//   var iirFilterCoeffs = iirCalculator.lowpass({
-//     order: 4, characteristic: 'butterworth',
-//     Fs: fs, Fc: fc, gain: 0, preGain: false
-//   });
-//   return new Fili.IirFilter(iirFilterCoeffs);
-// }
+var _filters = {}
+
+var get_filter = function (fs, fc) {
+  var hash = fs+''+fc;
+  if (_filters[hash] === undefined) {
+    var iirCalculator = new Fili.CalcCascades();
+    var availableFilters = iirCalculator.available();
+    var iirFilterCoeffs = iirCalculator.lowpass({
+      order: 4, characteristic: 'butterworth',
+      Fs: fs, Fc: fc, gain: 0, preGain: false
+    });
+    _filters[hash] = new Fili.IirFilter(iirFilterCoeffs);
+  }
+  return _filters[hash];
+}
 
 var linear_downsample = function (X, sr_old, sr_new) {
+  var F = get_filter(sr_old, Math.floor(0.4*sr_new));
+  X = F.multiStep(X);
   var t = Float32Array.from(
     new Array(Math.round((X.length-1)*sr_new/sr_old)),
     (val, idx)=>idx*sr_old/sr_new
@@ -93,3 +101,4 @@ var FilteredEDF = function (self={}) {
   return self;
 }
 window.FilteredEDF = FilteredEDF;
+window.get_filter = get_filter;
