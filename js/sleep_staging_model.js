@@ -47,14 +47,14 @@ var Model = function (self) {
     return self.config.input.sampling_rate;
   }
 
-  async function predict(input) {
+  function predict(input) {
     if (self.net == null) { self.load_model(); }
     assert(input.shape.length == 3, "Wrong input shape "+input.shape);
     assert(input.shape[1] == self.config.input.length, "Wrong input shape "+input.shape);
     assert(input.shape[2] == self.config.input.channels.length, "Wrong input shape "+input.shape);
-    const output = await self.net.predict(input);
-    return output;
+    return self.net.predictOnBatch(input);
   }
+
   self.load_model = load_model;
   self.predict = predict;
   return self;
