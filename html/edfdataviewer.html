@@ -3,18 +3,10 @@
 <head>
 <link rel="stylesheet" type='text/css' href="../css/edfbase.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfdataviewer.css"></style>
-<!-- Load scripts locally -->
 <script src="../js/plotly-latest.min.js"></script>
-<script src="../js/edf-0.1.0.min.js"></script>
-<!-- Load scripts from CDNs -->
-<script type="text/javascript">
-  if (typeof edfjs == 'undefined') {
-    document.write(unescape("%3Cscript src='https://cdn.rawgit.com/jusjusjus/edfjs/b1696d8c/dist/releases/edf-0.1.0.min.js' type='text/javascript'%3E%3C/script%3E"));
-  }
-  if (typeof Plotly == 'undefined') {
-    document.write(unescape("%3Cscript src='https://cdn.plot.ly/plotly&#45;latest.min.js' type='text/javascript'%3E%3C/script%3E"));
-  }
-</script>
+<!-- <script src="https://cdn.plot.ly/plotly&#45;latest.min.js"></script> -->
+<script src="../js/edf.min.js"></script>
+<!-- <script src="http://unpkg.com/edfjs"></script> -->
 <script src="../js/fili.min.js"></script>
 <script src="../js/plotting_area.js"></script>
 <script src="../js/slider.js"></script>
@@ -25,13 +17,10 @@
 
 	async function load_selected_file () {
 		var files = document.getElementById('fileSelector').files;
-    edffile = await edfjs.EDF().from_file(files[0], files_loaded, header_only=false);
-	}
-
-	function files_loaded (evt=null) {
+    edffile = await edfjs.EDF().from_file(files[0], header_only=false);
 		figure = PlottingArea("figure", edffile);
 		refresh_navbar();
-		slider = Slider('slider', figure).build();
+		slider = Slider('slider', [figure]).build();
 	}
 
 	function clear_filecache () {
