@@ -38,3 +38,20 @@ function toPercentStr(arr) {
   txt += Math.round(100*arr[v])+"%";
   return txt;
 }
+
+function mean(x) {
+  var m = 0.0;
+  for (var i=0; i<x.length; i++) {
+    m = (i*m + x[i])/(i+1);
+  }
+  return m;
+}
+
+function variance(x) {
+  var m = mean(x);
+  var v = 0.0;
+  for (var i=0; i<x.length; i++) {
+    v = (i*v + (x[i]-m)*(x[i]-m))/(i+1);
+  }
+  return v;
+}
