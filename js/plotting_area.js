@@ -43,7 +43,7 @@ var PlottingArea = function (element_id, edffile, window_duration, self) {
   }
   
   function slider_str(millis) {
-    var date = self.file.relative_date(millis);
+    var date = self.file.relative_date(1000*millis);
     return date.toUTCString();
   }
 

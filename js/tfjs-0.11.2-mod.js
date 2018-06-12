@@ -14054,8 +14054,7 @@ e.getLoadHandlers = function (t) {
 return e.getHandlers(t, 'load')
 },
 e.getHandlers = function (e, t) {
-var r = [
-];
+var r = [];
 return ('load' === t ? this.getInstance().loadRouters : this.getInstance().saveRouters).forEach(function (t) {
   var n = t(e);
   null !== n && r.push(n)

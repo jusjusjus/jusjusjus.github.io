@@ -41,49 +41,6 @@
 		annotations = await Annotations().load(files[0]);
 	}
 
-	async function predict_current_stage() {
-		if (dataloader === null) build_dataloader();
-
-		const T = await dataloader.get(slider.value);
-		const Y = await model.predict(T);
-		var V = Y.buffer().values;
-
-		var txt = "Prob = ("+toPercentStr(V)+")";
-		document.getElementById('prediction').innerHTML = txt;
-
-		T.dispose()
-		Y.dispose()
-	}
-
-	// async function predictOnBatch(batch) {
-	// 	document.getElementById("prediction").innerHTML = "Example "+batch.length;
-	// }
-  //
-	// async function asyncPredict() {
-	// 	build_dataloader();
-	// 	const batch_size = 64;
-	// 	const num_classes = 5;
-	// 	var batch = [];
-	// 	annotations = Annotations(model.config.input.duration);
-	// 	show_hypnogram();
-	// 	var ii = 0;
-	// 	async function build_batch_and_predict() {
-	// 		var batch = [];
-	// 		console.log('ii', ii);
-	// 		for (ii; ii<dataloader.length; ii++) {
-	// 			var example = await dataloader.get(ii);
-	// 			batch.push(example);
-	// 			if(batch.length == batch_size) {
-	// 				predictOnBatch(batch);
-	// 				ii = i;
-	// 				window.requestAnimationFrame(build_batch_and_predict);
-	// 				break
-	// 			}
-	// 		}
-	// 	}
-	// 	window.requestAnimationFrame(build_batch_and_predict);
-	// }
-
 	async function predict() {
 		build_dataloader();
 		const batch_size = 64;
@@ -105,13 +62,14 @@
 				}
 				annotations.stream_probs(probs);
 				hypnogram.redraw();
+				document.getElementById("prediction").innerHTML = "Scoring epoch "+ii+" of "+dataloader.length;
+				await sleep();
 				result.dispose();
 				for(var b in batch) {
 					batch[b].dispose();
 				}
 				batch = [];
 			}
-			document.getElementById("prediction").innerHTML = "Example "+ii;
 		}
 		if (batch.length > 0) {
 			const result = tf.tidy( () => {
@@ -132,16 +90,17 @@
 			}
 			batch = [];
 		}
+		document.getElementById("prediction").innerHTML = "Success: "+ii+" epochs scored.";
 	}
 
-	async function load_model(num_layers=8) {
+	async function load_model() {
 		model = Model();
-		await model.load_model(num_layers);
-    edffile.channel_by_label['EEG1'] = edffile.channel_by_label['EEG C3-A2'];
-    edffile.channel_by_label['EEG2'] = edffile.channel_by_label['EEG C4-A1'];
-    edffile.channel_by_label['EOG1'] = edffile.channel_by_label['EOG Left'];
-    edffile.channel_by_label['EOG2'] = edffile.channel_by_label['EOG Right'];
-    edffile.channel_by_label['EMG'] = edffile.channel_by_label['EMG Chin'];
+		await model.load_model();
+    // edffile.channel_by_label['EEG1'] = edffile.channel_by_label['EEG C3-A2'];
+    // edffile.channel_by_label['EEG2'] = edffile.channel_by_label['EEG C4-A1'];
+    // edffile.channel_by_label['EOG1'] = edffile.channel_by_label['EOG Left'];
+    // edffile.channel_by_label['EOG2'] = edffile.channel_by_label['EOG Right'];
+    // edffile.channel_by_label['EMG'] = edffile.channel_by_label['EMG Chin'];
 		refresh_channelselection();
 	}
 
@@ -207,13 +166,18 @@
 		var txt = "";
 		if (model != null && edffile != null && edffile.channel_by_label != null) {
       await model.config;
+			var all_selected = true;
 			for (i in model.config.input.channels) {
 				txt += "<div class='dropdown tooltip'>";
 				txt += "<span class='tooltiptext'>Select Input Channels for Automatic Sleep Staging</span>";
 				var input_channel = model.config.input.channels[i];
 				txt += "<button onclick='toggleDropdown(\""+input_channel+"\")' class='dropbtn'>";
 				txt += input_channel;
-				if (input_channel in edffile.channel_by_label) txt += " ("+edffile.channel_by_label[input_channel].label+")";
+				if (input_channel in edffile.channel_by_label) {
+					txt += " ("+edffile.channel_by_label[input_channel].label+")";
+				} else {
+					all_selected = false;
+				}
 				txt += "</button>";
 				txt += "<div id='"+input_channel+"' class='dropdown-content'>";
 				txt += "<ul>";
@@ -225,9 +189,11 @@
 				txt += "</div>";
 				txt += "</div>";
       }
-			txt += "<button onclick='predict()' class='dropbtn exec'>Predict All Stages</button>";
-			// txt += "<button onclick='asyncPredict()' class='dropbtn exec'>Predict All Stages</button>";
-			// txt += "<button onclick='predict_current_stage()' class='dropbtn exec'>Predict Current Stage</button>";
+			if (all_selected) {
+				txt += "<button onclick='predict()' class='dropbtn exec'>Predict All Stages</button>";
+			} else {
+				txt += "<button onclick='alert(\"All channels need to be selected\")' class='dropbtn exec'>Predict All Stages</button>";
+			}
     }
     document.getElementById("channelSelection").innerHTML = txt;
 	}

@@ -55,3 +55,8 @@ function variance(x) {
   }
   return v;
 }
+
+function sleep(ms) {
+  ms = ms || 0;
+  return new Promise(resolve => setTimeout(resolve, ms));
+}

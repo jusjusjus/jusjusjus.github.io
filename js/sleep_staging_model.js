@@ -37,8 +37,8 @@ var Model = function (self) {
 
   async function load_model(num_layers=8) {
     assert(self.net === null, "Warning re-loading net");
-    var modelfile = '../models/humans/production/num_layers_'+num_layers+'/model/model.json'
-    var configfile = '../models/humans/production/num_layers_'+num_layers+'/model/config.json'
+    var modelfile = '../models/humans/aasm/model.json'
+    var configfile = '../models/humans/aasm/config.json'
     self.config = await load_config(configfile);
     self.net = await tf.loadModel(modelfile);
   }
