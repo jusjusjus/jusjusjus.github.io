@@ -4,14 +4,15 @@
 <link rel="stylesheet" type='text/css' href="../css/edfbase.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfdataviewer.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfstaging.css"></style>
-<script src="../js/plotly-latest.min.js"></script>
-<!-- <script src="../js/edf&#45;0.1.0.min.js"></script> -->
-<script src="../js/edf.js"></script>
+<!-- <script src="../js/plotly&#45;latest.min.js"></script> -->
+<script src="https://cdn.plot.ly/plotly-1.38.3.min.js"></script>
+<!-- <script src="../js/edf.min.js"></script> -->
+<script src="http://unpkg.com/edfjs"></script>
+<!-- <script src="../js/papaparse.min.js"></script> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.5.0/papaparse.min.js"></script>
+<!-- <script src="../js/fili.min.js"></script> -->
+<script src="https://unpkg.com/fili@2.0.1"></script>
 <script src="../js/tfjs-0.11.2-mod.js"></script>
-<script src="../js/papaparse.min.js"></script>
-<script type="text/javascript">
-</script>
-<script src="../js/fili.min.js"></script>
 <script src="../js/util.js"></script>
 <script src="../js/filtered_edf.js" type="module"></script>
 <script src="../js/plotting_area.js"></script>
@@ -27,11 +28,6 @@
 	var model = null;
   var dataloader = null;
 	var annotations = null;
-
-	async function load_selected_annots() {
-		var files = document.getElementById('scoreSelector').files;
-		annotations = await Annotations().load(files[0]);
-	}
 
 	async function predict() {
 		build_dataloader();
@@ -113,6 +109,12 @@
 		if (model === null) {
 			load_model();
 		}
+	}
+
+	async function load_selected_annots() {
+		var files = document.getElementById('scoreSelector').files;
+		annotations = await Annotations().load(files[0]);
+		show_hypnogram();
 	}
 
 	function show_hypnogram() {
@@ -207,7 +209,6 @@
 		}
 		if (scoreSelector.value != "") {
 			await load_selected_annots();
-			show_hypnogram();
 		}
 	}
 
