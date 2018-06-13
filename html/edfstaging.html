@@ -31,7 +31,7 @@
 
 	async function predict() {
 		build_dataloader();
-		const batch_size = 64;
+		const batch_size = 32;
 		const num_classes = 5;
 		var batch = [];
 		annotations = Annotations(model.config.input.duration);
