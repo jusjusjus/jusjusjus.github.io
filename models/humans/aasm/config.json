@@ -5,7 +5,7 @@
 		"left": 30.0,
 		"right": 30.0,
 		"length": 3600,
-		"channels": ["EEG1", "EEG2", "EOG1", "EOG2", "EMG"]
+		"channels": ["#EEG1", "#EEG2", "#EOG1", "#EOG2", "#EMG"]
 	},
 	"output": {
 		"type": "probability",

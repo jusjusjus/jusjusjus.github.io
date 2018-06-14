@@ -22,7 +22,7 @@ var linear_downsample = function (X, sr_old, sr_new) {
   X = F.multiStep(X);
   var t = Float32Array.from(
     new Array(Math.round((X.length-1)*sr_new/sr_old)),
-    (val, idx)=>idx*sr_old/sr_new
+      (val, idx)=>idx*sr_old/sr_new
   );
   var I = Int32Array.from(t);
   var x = new Float32Array(t.length);
@@ -59,6 +59,24 @@ var FilteredEDF = function (self={}) {
       }
       resolve(Y);
     });
+  }
+
+  self.cache_channel = function(label, cache_label, sr_new) {
+    console.log(label, cache_label, sr_new);
+    if (cache_label in self.channel_by_label) {
+      delete self.channel_by_label[cache_label];
+    }
+    var to_cache = self.channel_by_label[label];
+    var sr_old = to_cache.sampling_rate;
+    var cached = edfjs.Channel();
+    cached.blob = Float32Array.from(
+      linear_downsample(to_cache.blob, sr_old, sr_new));
+    cached.sampling_rate = sr_new;
+    cached.label = label;
+    cached.channel_type = to_cache.channel_type;
+    cached.physical_dimension = to_cache.physical_dimension;
+    cached.prefiltering = to_cache.prefiltering;
+    self.channel_by_label[cache_label] = cached;
   }
 
   self.set_model = function(model) {

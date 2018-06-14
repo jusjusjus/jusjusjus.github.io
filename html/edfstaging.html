@@ -4,14 +4,14 @@
 <link rel="stylesheet" type='text/css' href="../css/edfbase.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfdataviewer.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfstaging.css"></style>
-<!-- <script src="../js/plotly&#45;latest.min.js"></script> -->
-<script src="https://cdn.plot.ly/plotly-1.38.3.min.js"></script>
-<!-- <script src="../js/edf.js"></script> -->
-<script src="https://unpkg.com/edfjs"></script>
-<!-- <script src="../js/papaparse.min.js"></script> -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.5.0/papaparse.min.js"></script>
-<!-- <script src="../js/fili.min.js"></script> -->
-<script src="https://unpkg.com/fili@2.0.1"></script>
+<script src="../js/plotly-latest.min.js"></script>
+<!-- <script src="https://cdn.plot.ly/plotly&#45;1.38.3.min.js"></script> -->
+<script src="../js/edf.js"></script>
+<!-- <script src="https://unpkg.com/edfjs"></script> -->
+<script src="../js/papaparse.min.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.5.0/papaparse.min.js"></script> -->
+<script src="../js/fili.min.js"></script>
+<!-- <script src="https://unpkg.com/fili@2.0.1"></script> -->
 <script src="../js/tfjs-0.11.2-mod.js"></script>
 <script src="../js/util.js"></script>
 <script src="../js/filtered_edf.js" type="module"></script>
@@ -29,9 +29,13 @@
   var dataloader = null;
 	var annotations = null;
 
+	var prediction_lock = false;
 	async function predict() {
+		if (prediction_lock) return null;
+		await sleep("Initializing sleep staging ..");
+		prediction_lock = true;
 		build_dataloader();
-		const batch_size = 32;
+		const batch_size = 64;
 		const num_classes = 5;
 		var batch = [];
 		annotations = Annotations(model.config.input.duration);
@@ -50,8 +54,7 @@
 				}
 				annotations.stream_probs(probs);
 				hypnogram.redraw();
-				document.getElementById("prediction").innerHTML = "Scoring epoch "+ii+" of "+dataloader.length;
-				await sleep();
+				await sleep("Progress: scoring epoch "+ii+" of "+dataloader.length);
 				result.dispose();
 				for(var b in batch) {
 					batch[b].dispose();
@@ -78,21 +81,24 @@
 			}
 			batch = [];
 		}
-		document.getElementById("prediction").innerHTML = "Success: "+ii+" epochs scored.";
+		await sleep("Success: "+ii+" epochs scored.");
+		prediction_lock = false;
 	}
 
 	async function load_model() {
+		await sleep("Loading ML model ..");
 		model = Model();
 		await model.load_model();
 		try {
-			edffile.channel_by_label['EEG1'] = edffile.channel_by_label['C4-A1'];
-			edffile.channel_by_label['EEG2'] = edffile.channel_by_label['C4-A1'];
-			edffile.channel_by_label['EOG1'] = edffile.channel_by_label['ROC-LOC'];
-			edffile.channel_by_label['EOG2'] = edffile.channel_by_label['ROC-LOC'];
-			edffile.channel_by_label['EMG'] = edffile.channel_by_label['EMG1-EMG2'];
+			await channelSelected('#EEG1', 'C4-A1');
+			await channelSelected('#EEG2', 'C4-A1');
+			await channelSelected('#EOG1', 'ROC-LOC');
+			await channelSelected('#EOG2', 'ROC-LOC');
+			await channelSelected('#EMG', 'EMG1-EMG2');
 		} catch {
 			console.log("Channels not found.");
 		}
+		await sleep(" ");
 		refresh_channelselection();
 	}
 
@@ -103,6 +109,7 @@
 
 	async function load_selected_file () {
 		var files = document.getElementById('fileSelector').files;
+		await sleep("Loading edf file '"+files[0].name+"' ..");
     edffile = await FilteredEDF().from_file(files[0], header_only=false);
 		figure = PlottingArea("figure", edffile, 30.0);
 		refresh_navbar();
@@ -113,12 +120,15 @@
 		if (model === null) {
 			load_model();
 		}
+		await sleep("");
 	}
 
 	async function load_selected_annots() {
 		var files = document.getElementById('scoreSelector').files;
+		await sleep("Loading annotations file"+files[0]+" ..");
 		annotations = await Annotations().load(files[0]);
 		show_hypnogram();
+		await sleep("");
 	}
 
 	function show_hypnogram() {
@@ -196,8 +206,10 @@
     document.getElementById("channelSelection").innerHTML = txt;
 	}
 
-	function channelSelected (input_channel, target_channel) {
-    edffile.channel_by_label[input_channel] = edffile.channel_by_label[target_channel];
+	async function channelSelected (input_channel, target_channel) {
+		await sleep("Caching "+target_channel+" as "+input_channel);
+		await edffile.cache_channel(target_channel, input_channel, model.config.input.sampling_rate)
+		await sleep(" ");
 		refresh_channelselection();
 	}
 
@@ -256,7 +268,7 @@
 <div class="figure" id="figure"></div>
 <div class="figure" id="hypnogram"></div>
 <div id="slider"></div>
-<div id="prediction"></div>
+<div id="status"></div>
 </article>
 
 <footer>Powered by <a href="https://plot.ly">plotly</a> and  <a href="https://js.tensorflow.org">TensorFlow.js</a><br>
