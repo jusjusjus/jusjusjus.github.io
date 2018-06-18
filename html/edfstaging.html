@@ -4,14 +4,14 @@
 <link rel="stylesheet" type='text/css' href="../css/edfbase.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfdataviewer.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfstaging.css"></style>
-<script src="../js/plotly-latest.min.js"></script>
-<!-- <script src="https://cdn.plot.ly/plotly&#45;1.38.3.min.js"></script> -->
-<script src="../js/edf.js"></script>
-<!-- <script src="https://unpkg.com/edfjs"></script> -->
-<script src="../js/papaparse.min.js"></script>
-<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.5.0/papaparse.min.js"></script> -->
-<script src="../js/fili.min.js"></script>
-<!-- <script src="https://unpkg.com/fili@2.0.1"></script> -->
+<!-- <script src="../js/plotly&#45;latest.min.js"></script> -->
+<script src="https://cdn.plot.ly/plotly-1.38.3.min.js"></script>
+<!-- <script src="../js/edf.js"></script> -->
+<script src="https://unpkg.com/edfjs"></script>
+<!-- <script src="../js/papaparse.min.js"></script> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.5.0/papaparse.min.js"></script>
+<!-- <script src="../js/fili.min.js"></script> -->
+<script src="https://unpkg.com/fili@2.0.1"></script>
 <script src="../js/tfjs-0.11.2-mod.js"></script>
 <script src="../js/util.js"></script>
 <script src="../js/filtered_edf.js" type="module"></script>
@@ -21,19 +21,19 @@
 <script src="../js/sleep_staging_model.js"></script>
 <script src="../js/annotations.js"></script>
 <script>
-	var edffile = null;
-	var figure = null;
-	var hypnogram = null;
-	var slider = null;
 	var model = null;
+	var slider = null;
+	var figure = null;
+	var edffile = null;
+	var hypnogram = null;
   var dataloader = null;
 	var annotations = null;
 
 	var prediction_lock = false;
 	async function predict() {
 		if (prediction_lock) return null;
-		await sleep("Initializing sleep staging ..");
 		prediction_lock = true;
+		await sleep("Initializing sleep staging ..");
 		build_dataloader();
 		const batch_size = 64;
 		const num_classes = 5;
@@ -90,11 +90,11 @@
 		model = Model();
 		await model.load_model();
 		try {
-			await channelSelected('#EEG1', 'C4-A1');
-			await channelSelected('#EEG2', 'C4-A1');
-			await channelSelected('#EOG1', 'ROC-LOC');
-			await channelSelected('#EOG2', 'ROC-LOC');
-			await channelSelected('#EMG', 'EMG1-EMG2');
+			await select_channel_for_scoring('#EEG1', 'C4-A1');
+			await select_channel_for_scoring('#EEG2', 'C4-A1');
+			await select_channel_for_scoring('#EOG1', 'ROC-LOC');
+			await select_channel_for_scoring('#EOG2', 'ROC-LOC');
+			await select_channel_for_scoring('#EMG', 'EMG1-EMG2');
 		} catch {
 			console.log("Channels not found.");
 		}
@@ -125,7 +125,7 @@
 
 	async function load_selected_annots() {
 		var files = document.getElementById('scoreSelector').files;
-		await sleep("Loading annotations file"+files[0]+" ..");
+		await sleep("Loading annotations file "+files[0].name+" ..");
 		annotations = await Annotations().load(files[0]);
 		show_hypnogram();
 		await sleep("");
@@ -146,8 +146,14 @@
     figure.del(); delete figure; figure = null;
 		slider.del(); delete slider; slider = null;
 		delete edffile; edffile = null;
+		delete model; model = null;
+		delete hypnogram; hypnogram = null;
+		delete annotations; annotations = null;
 		refresh_navbar();
+		refresh_channelselection();
+		document.getElementById('hypnogram').value = "";
 		document.getElementById('fileSelector').value = "";
+		document.getElementById('scoreSelector').value = "";
 	}
 
 	function refresh_navbar() {
@@ -165,7 +171,7 @@
         }
         txt += " onclick='figure.switch_selection("+c+", refresh_navbar)'>"+C.label+"</li>";
       }
-      txt += "<li class='clear' onclick='clear_filecache()'>Clear</li>";
+      txt += "<li class='clear' onclick='clear_filecache()'>Close file</li>";
     }
     nav.innerHTML = txt;
 	}
@@ -191,7 +197,7 @@
 				txt += "<ul>";
 				for (var c in edffile.channels) {
 					target_channel = edffile.channels[c].label;
-					txt += "<li onclick='channelSelected(\""+input_channel+"\", \""+target_channel+"\")'>"+target_channel+"</li>";
+					txt += "<li onclick='select_channel_for_scoring(\""+input_channel+"\", \""+target_channel+"\")'>"+target_channel+"</li>";
 				}
 				txt += "</ul>";
 				txt += "</div>";
@@ -206,7 +212,7 @@
     document.getElementById("channelSelection").innerHTML = txt;
 	}
 
-	async function channelSelected (input_channel, target_channel) {
+	async function select_channel_for_scoring (input_channel, target_channel) {
 		await sleep("Caching "+target_channel+" as "+input_channel);
 		await edffile.cache_channel(target_channel, input_channel, model.config.input.sampling_rate)
 		await sleep(" ");
@@ -225,19 +231,6 @@
 		}
 		if (scoreSelector.value != "") {
 			await load_selected_annots();
-		}
-	}
-
-	function setTimeoutAsync(callback, msec) { 
-		return new Promise(resolve => {
-			setTimeout(() => {resolve(callback());}, msec);
-		});
-	}
-
-	function assert(condition, msg) {
-		if(!condition) {
-			console.error("Error: "+msg);
-			throw msg;
 		}
 	}
 

@@ -1,4 +1,11 @@
 
+function assert(condition, msg) {
+  if(!condition) {
+    console.error("Error: "+msg);
+    throw msg;
+  }
+}
+
 function concatenate(resultConstructor, arrays) {
   let length = 0;
   for (var i in arrays) {
