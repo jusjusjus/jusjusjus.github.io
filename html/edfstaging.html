@@ -12,7 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.5.0/papaparse.min.js"></script>
 <!-- <script src="../js/fili.min.js"></script> -->
 <script src="https://unpkg.com/fili@2.0.1"></script>
-<script src="../js/tfjs-0.11.2-mod.js"></script>
+<script src="../js/tfjs-0.11.6-mod.js"></script>
 <script src="../js/util.js"></script>
 <script src="../js/filtered_edf.js" type="module"></script>
 <script src="../js/plotting_area.js"></script>
@@ -90,11 +90,11 @@
 		model = Model();
 		await model.load_model();
 		try {
-			await select_channel_for_scoring('#EEG1', 'C4-A1');
-			await select_channel_for_scoring('#EEG2', 'C4-A1');
-			await select_channel_for_scoring('#EOG1', 'ROC-LOC');
-			await select_channel_for_scoring('#EOG2', 'ROC-LOC');
-			await select_channel_for_scoring('#EMG', 'EMG1-EMG2');
+      await select_channel_for_scoring('#EEG1', 'C3');
+			await select_channel_for_scoring('#EEG2', 'C4');
+			await select_channel_for_scoring('#EOG1', 'LOC');
+			await select_channel_for_scoring('#EOG2', 'ROC');
+			await select_channel_for_scoring('#EMG', 'EMG2');
 		} catch {
 			console.log("Channels not found.");
 		}
