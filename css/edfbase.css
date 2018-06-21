@@ -47,8 +47,6 @@ footer {
 	padding: 0;
 	overflow: scroll;
 	background-color: #effebe;
-	position: -webkit-sticky;
-	position: sticky;
 	top: 0;
 }
 

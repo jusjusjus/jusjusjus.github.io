@@ -6,8 +6,8 @@
 <link rel="stylesheet" type='text/css' href="../css/edfstaging.css"></style>
 <!-- <script src="../js/plotly&#45;latest.min.js"></script> -->
 <script src="https://cdn.plot.ly/plotly-1.38.3.min.js"></script>
-<script src="../js/edf.min.js"></script>
-<!-- <script src="https://unpkg.com/edfjs"></script> -->
+<!-- <script src="../js/edf.min.js"></script> -->
+<script src="https://unpkg.com/edfjs"></script>
 <!-- <script src="../js/papaparse.min.js"></script> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.5.0/papaparse.min.js"></script>
 <!-- <script src="../js/fili.min.js"></script> -->
@@ -90,11 +90,11 @@
 		model = Model();
 		await model.load_model();
 		try {
-      await select_channel_for_scoring('#EEG1', 'C3');
-			await select_channel_for_scoring('#EEG2', 'C4');
+      await select_channel_for_scoring('#EEG1', 'C3-M2');
+			await select_channel_for_scoring('#EEG2', 'C4-M1');
 			await select_channel_for_scoring('#EOG1', 'LOC');
 			await select_channel_for_scoring('#EOG2', 'ROC');
-			await select_channel_for_scoring('#EMG', 'EMG2');
+			await select_channel_for_scoring('#EMG', 'EMG');
 		} catch {
 			console.log("Channels not found.");
 		}

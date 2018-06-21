@@ -45,20 +45,9 @@ var FilteredEDF = function (self={}) {
     channel_by_label: self.channel_by_label
   };
 
-  self.get_physical_samples = async function(t0, dt, channels) {
-    var Y = await parent.get_physical_samples(t0, dt, channels);
-    return new Promise( function (resolve, reject) {
-      for (var label in Y) {
-        if (label in self.sampling_rate) {
-          var sr_old = self.channel_by_label[label].sampling_rate;
-          var sr_new = self.sampling_rate[label];
-          if (sr_old !== sr_new) {
-            Y[label] = linear_downsample(Y[label], sr_old, sr_new);
-          }
-        }
-      }
-      resolve(Y);
-    });
+  self.get_physical_samples = async function(t0, dt, channels, n) {
+    var Y = await parent.get_physical_samples(t0, dt, channels, n);
+    return new Promise((r)=>{r(Y);});
   }
 
   self.cache_channel = function(label, cache_label, sr_new) {
@@ -97,7 +86,8 @@ var FilteredEDF = function (self={}) {
       if (t0+example_duration >= self.duration) {
         t0 = self.duration - example_duration-0.1;
       }
-      return self.get_physical_samples(t0, example_duration, self.model_input_channels);
+      return self.get_physical_samples(
+        t0, null, self.model_input_channels, self.samples_per_segment);
     }
     return self;
   }
