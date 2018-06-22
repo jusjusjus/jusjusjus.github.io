@@ -30,20 +30,20 @@ var Hypnogram = function (element_id, annotations, self) {
     self.element().innerHTML = txt;
   }
 
-  function labels2curve(labels) {
-    var x = [], y = [];
-    for (var l in labels) {
+  function labels2curve(annotations) {
+    var labels = annotations.labels;
+    var label = labels[0];
+    var next_label = null;
+    var x = [0], y = [label];
+    for (var l=1; l<labels.length; l++) {
+      next_label = labels[l];
+      if (next_label != label) {
+        x.push((l-1)*self.annotations.dt*sec2hour);
+        y.push(label2hash[next_label]);
+        label = next_label;
+      }
       x.push(l*self.annotations.dt*sec2hour);
-      y.push(label2hash[labels[l]]);
-    }
-    return {x:x, y:y};
-  }
-
-  function labels2curve(labels) {
-    var x = [], y = [];
-    for (var l in labels) {
-      x.push(l*self.annotations.dt*sec2hour);
-      y.push(label2hash[labels[l]]);
+      y.push(label2hash[label]);
     }
     return {x:[x], y:[y]};
   }
@@ -60,7 +60,7 @@ var Hypnogram = function (element_id, annotations, self) {
     };
     // data
     var traces = [];
-    var trace = labels2curve(self.annotations.labels);
+    var trace = labels2curve(self.annotations);
     var data = {
       x: trace.x[0], y: trace.y[0],
       mode: "lines",
@@ -98,7 +98,7 @@ var Hypnogram = function (element_id, annotations, self) {
 
   function redraw() {
     var drawingArea = document.getElementById("hypnogramDrawingArea");
-    Plotly.restyle(drawingArea, labels2curve(self.annotations.labels), 0);
+    Plotly.restyle(drawingArea, labels2curve(self.annotations), 0);
   }
 
   self.del = del;
