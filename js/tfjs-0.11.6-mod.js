@@ -22344,9 +22344,7 @@
             var _this = this;
             return tidy(function () {
                 _this.invokeCallHook(inputs, kwargs);
-                console.warn("const tensor = transpose(getExactlyOneTensor(e), [0, 2, 1])");
-                const tensor = transpose(getExactlyOneTensor(inputs), [0, 2, 1]);
-                return batchFlatten(tensor);
+                return batchFlatten(getExactlyOneTensor(inputs));
             });
         };
         Flatten.className = 'Flatten';
