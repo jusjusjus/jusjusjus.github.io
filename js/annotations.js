@@ -88,7 +88,7 @@ var Annotations = function (dt, labels, self) {
 
   self.stream_probs = function (probs) {
     assert(self.dt !== null, "time step `Annotations.dt` not set.");
-    t00 = self.t0.length > 0 ? self.t0[self.t0.length-1]+self.dt : 0.0
+    var t00 = self.t0.length > 0 ? self.t0[self.t0.length-1]+self.dt : 0.0;
     self.t0.push(t00);
     self.labels.push(hash2label[argmax(probs[0])]);
     self.probabilities.push(probs[0]);
