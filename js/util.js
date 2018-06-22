@@ -6,6 +6,11 @@ function assert(condition, msg) {
   }
 }
 
+function clamp(x, a, b) {
+  x = x < a ? a:x;
+  return x > b ? b:x;
+}
+
 function concatenate(resultConstructor, arrays) {
   let length = 0;
   for (var i in arrays) {

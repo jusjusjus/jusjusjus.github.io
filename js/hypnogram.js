@@ -30,63 +30,92 @@ var Hypnogram = function (element_id, annotations, self) {
     self.element().innerHTML = txt;
   }
 
+  function rgb(r, g, b) {
+    return "rgb("+Math.round(255*r)+","+Math.round(255*g)+","+Math.round(255*b)+")";
+  }
+
+  function color_map(p) {
+    p = clamp(2.0*(p-0.5), 0.0, 1.0);
+    return rgb(0.94*(1.0-p), 0.9*p, 0.34*p);
+  }
+
   function labels2curve(annotations) {
-    var labels = annotations.labels;
-    var label = labels[0];
-    var next_label = null;
-    var x = [0], y = [label];
+    var labels = annotations.labels,
+        label = labels[0],
+        next_label = null,
+        probs = annotations.max_probs,
+        x = [0],
+        y = [label],
+        c = [color_map(probs[0])];
     for (var l=1; l<labels.length; l++) {
       next_label = labels[l];
       if (next_label != label) {
-        x.push((l-1)*self.annotations.dt*sec2hour);
-        y.push(label2hash[next_label]);
+        x.push(l*self.annotations.dt*sec2hour);
+        y.push(label2hash[label]);
+        c.push(color_map(probs[l]));
         label = next_label;
       }
       x.push(l*self.annotations.dt*sec2hour);
-      y.push(label2hash[label]);
+      y.push(label2hash[next_label]);
+      c.push(color_map(probs[l]));
     }
-    return {x:[x], y:[y]};
+    return {x:[x], y:[y], 'marker.color':[c]};
   }
 
   async function create_new_plot() {
     create_drawing_area();
     var traces = [];
     var layout = {
-      plot_bgcolor: "rgb(0.94,0.99,0.75)",
-      paper_bgcolor: "rgb(0.94,0.99,0.75)",
+      plot_bgcolor: rgb(0.94,0.99,0.75),
+      paper_bgcolor: rgb(0.94,0.99,0.75),
       showlegend: false,
       xaxis: {title: "relative time (hours)"},
-      margin: { t: 0, b: 30, l: 40, r: 20 }
+      margin: { t: 0, b: 30, l: 40, r: 20 },
+      yaxis: {
+        tickvals: [0, 1, 2, 3, 4],
+        ticktext: hash2label,
+        zeroline: false
+      }
     };
     // data
-    var traces = [];
-    var trace = labels2curve(self.annotations);
-    var data = {
-      x: trace.x[0], y: trace.y[0],
+    var data = [];
+    var d = labels2curve(self.annotations);
+    var points = {
+      type: 'scatter',
+      x: d.x[0], y: d.y[0],
+      mode: "markers",
+      marker: {
+        color: d['marker.color'][0],
+        symbol: 'square',
+        size: 4
+      },
+      yaxis: "y"
+    };
+    var trace = {
+      type: 'scatter',
+      x: d.x[0], y: d.y[0],
       mode: "lines",
-      line: { color: "rgb(0.0, 0.0, 0.0)", width: 2.0 },
+      line: {
+        color: 'grey',
+        width: 4.0
+      },
       yaxis: "y"
     };
     var vert = {
       x: [window_start, window_start], y: [0, 4],
       mode: "lines", 
-      line: { color: "rgb(1.0, 0.0, 0.0)", width: 3.0 },
+      line: { color: rgb(0.25,0.25,0.25), width: 2.0 },
     };
-    traces = [data, vert];
+    data = [trace, points, vert];
     // layout
-    layout['yaxis'] = {
-      tickvals: [0, 1, 2, 3, 4],
-      ticktext: hash2label,
-      zeroline: false
-    };
-    await Plotly.newPlot("hypnogramDrawingArea", traces, layout, config);
+    await Plotly.newPlot("hypnogramDrawingArea", data, layout, config);
   }
 
   function set_time(t0) {
     t0 = t0*sec2hour || window_start;
     window_start = t0;
     var drawingArea = document.getElementById("hypnogramDrawingArea");
-    Plotly.restyle(drawingArea, {'x': [[window_start, window_start]]}, 1);
+    Plotly.restyle(drawingArea, {'x': [[window_start, window_start]]}, 2);
   }
 
   function slider_str(t0) {
@@ -98,7 +127,9 @@ var Hypnogram = function (element_id, annotations, self) {
 
   function redraw() {
     var drawingArea = document.getElementById("hypnogramDrawingArea");
-    Plotly.restyle(drawingArea, labels2curve(self.annotations), 0);
+    var curve = labels2curve(self.annotations);
+    Plotly.restyle(drawingArea, curve, 0);
+    Plotly.restyle(drawingArea, curve, 1);
   }
 
   self.del = del;

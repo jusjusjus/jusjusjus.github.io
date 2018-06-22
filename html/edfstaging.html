@@ -94,11 +94,11 @@
     model = Model();
     await model.load_model();
     try {
-      await select_channel_for_scoring('#EEG1', 'C3-M2');
-      await select_channel_for_scoring('#EEG2', 'C4-M1');
-      await select_channel_for_scoring('#EOG1', 'LOC');
-      await select_channel_for_scoring('#EOG2', 'ROC');
-      await select_channel_for_scoring('#EMG', 'EMG');
+      await select_channel_for_scoring('#EEG1', 'EEG C3-A2');
+      await select_channel_for_scoring('#EEG2', 'EEG C4-A1');
+      await select_channel_for_scoring('#EOG1', 'EOG Left');
+      await select_channel_for_scoring('#EOG2', 'EOG Right');
+      await select_channel_for_scoring('#EMG', 'EMG Chin');
     } catch {
       console.log("Channels not found.");
     }

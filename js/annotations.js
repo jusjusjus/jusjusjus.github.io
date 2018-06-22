@@ -85,6 +85,7 @@ var Annotations = function (dt, labels, self) {
   self.start = [];
   self.t0 = [];
   self.probabilities = [];
+  self.max_probs = [];
 
   self.stream_probs = function (probs) {
     assert(self.dt !== null, "time step `Annotations.dt` not set.");
@@ -93,9 +94,11 @@ var Annotations = function (dt, labels, self) {
     self.labels.push(hash2label[argmax(probs[0])]);
     self.probabilities.push(probs[0]);
     for(var i=1; i<probs.length; i++) {
+      var imax = argmax(probs[i]);
       self.t0.push(self.t0[self.t0.length-1]+self.dt);
-      self.labels.push(hash2label[argmax(probs[i])]);
+      self.labels.push(hash2label[imax]);
       self.probabilities.push(probs[i]);
+      self.max_probs.push(probs[i][imax]);
     }
   }
   
@@ -103,9 +106,12 @@ var Annotations = function (dt, labels, self) {
     self.dt = dt;
     self.probabilities = probs;
     self.labels = [];
+    self.max_probs = [];
     self.t0 = Float32Array.from(new Float32Array(probs.length), (val, idx)=>dt*idx);
     for(var i=0; i<probs.length; i++) {
-      self.labels.push(hash2label[argmax(probs[i])]);
+      var imax = argmax(probs[i]);
+      self.max_probs.push(probs[i][imax]);
+      self.labels.push(hash2label[imax]);
     }
     return self;
   }
@@ -121,9 +127,12 @@ var Annotations = function (dt, labels, self) {
           self.start = d.start;
           self.labels = d.label;
           self.probabilities = []
+          self.max_probs = []
           for (var l in self.labels) {
             var label = self.labels[l]
-            self.probabilities[l] = one_hot(label2hash[label], labels.length); 
+            var imax = label2hash[label];
+            self.probabilities[l] = one_hot(imax, labels.length);
+            self.max_probs.push(1.0);
           }
           resolve(self);
         });
