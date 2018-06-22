@@ -23,146 +23,149 @@
 <script src="../js/sleep_staging_model.js"></script>
 <script src="../js/annotations.js"></script>
 <script>
-	var model = null;
-	var slider = null;
-	var figure = null;
-	var edffile = null;
-	var hypnogram = null;
+  var model = null;
+  var slider = null;
+  var figure = null;
+  var edffile = null;
+  var hypnogram = null;
   var dataloader = null;
-	var annotations = null;
+  var channel_cache = {};
+  var annotations = null;
 
-	var prediction_lock = false;
-	async function predict() {
-		if (prediction_lock) return null;
-		prediction_lock = true;
-		await sleep("Initializing sleep staging ..");
-		build_dataloader();
-		const batch_size = 64;
-		const num_classes = 5;
-		var batch = [];
-		annotations = Annotations(model.config.input.duration);
-		show_hypnogram();
-		for (var ii=0; ii<dataloader.length; ii++) {
-			batch.push(await dataloader.get(ii));
-			if (batch_size == batch.length) {
-				const result = tf.tidy( () => {
-					const T = tf.concat(batch, axis=0);
-					return model.predict(T);
-				});
-				var arr = result.buffer().values;
-				var probs = [];
-				for (var e=0; e<arr.length; e+=num_classes) {
-					probs.push(arr.slice(e, e+num_classes));
-				}
-				annotations.stream_probs(probs);
-				hypnogram.redraw();
-				await sleep("Progress: scoring epoch "+ii+" of "+dataloader.length);
-				result.dispose();
-				for(var b in batch) {
-					batch[b].dispose();
-				}
-				batch = [];
-			}
-		}
-		if (batch.length > 0) {
-			const result = tf.tidy( () => {
-				const T = tf.concat(batch, axis=0);
-				return model.predict(T);
-			});
-			var final_batch_size = result.shape[0];
-			var arr = result.buffer().values;
-			var probs = [];
-			for (var e=0; e<arr.length; e+=num_classes) {
-				probs.push(arr.slice(e, e+num_classes));
-			}
-			annotations.stream_probs(probs);
-			hypnogram.redraw();
-			result.dispose();
-			for(var b in batch) {
-				batch[b].dispose();
-			}
-			batch = [];
-		}
-		await sleep("Success: "+ii+" epochs scored.");
-		prediction_lock = false;
-	}
+  var prediction_lock = false;
+  async function predict() {
+    if (prediction_lock) return null;
+    prediction_lock = true;
+    await cache_channels_for_scoring();
+    await sleep("Initializing sleep staging ..");
+    build_dataloader();
+    const batch_size = 64;
+    const num_classes = 5;
+    var batch = [];
+    annotations = Annotations(model.config.input.duration);
+    show_hypnogram();
+    for (var ii=0; ii<dataloader.length; ii++) {
+      batch.push(await dataloader.get(ii));
+      if (batch_size == batch.length) {
+        const result = tf.tidy( () => {
+          const T = tf.concat(batch, axis=0);
+          return model.predict(T);
+        });
+        var arr = result.buffer().values;
+        var probs = [];
+        for (var e=0; e<arr.length; e+=num_classes) {
+          probs.push(arr.slice(e, e+num_classes));
+        }
+        annotations.stream_probs(probs);
+        hypnogram.redraw();
+        await sleep("Progress: scoring epoch "+ii+" of "+dataloader.length);
+        result.dispose();
+        for(var b in batch) {
+          batch[b].dispose();
+        }
+        batch = [];
+      }
+    }
+    if (batch.length > 0) {
+      const result = tf.tidy( () => {
+        const T = tf.concat(batch, axis=0);
+        return model.predict(T);
+      });
+      var final_batch_size = result.shape[0];
+      var arr = result.buffer().values;
+      var probs = [];
+      for (var e=0; e<arr.length; e+=num_classes) {
+        probs.push(arr.slice(e, e+num_classes));
+      }
+      annotations.stream_probs(probs);
+      hypnogram.redraw();
+      result.dispose();
+      for(var b in batch) {
+        batch[b].dispose();
+      }
+      batch = [];
+    }
+    await sleep("Success: "+ii+" epochs scored.");
+    prediction_lock = false;
+  }
 
-	async function load_model() {
-		await sleep("Loading ML model ..");
-		model = Model();
-		await model.load_model();
-		try {
+  async function load_model() {
+    await sleep("Loading ML model ..");
+    model = Model();
+    await model.load_model();
+    try {
       await select_channel_for_scoring('#EEG1', 'C3-M2');
-			await select_channel_for_scoring('#EEG2', 'C4-M1');
-			await select_channel_for_scoring('#EOG1', 'LOC');
-			await select_channel_for_scoring('#EOG2', 'ROC');
-			await select_channel_for_scoring('#EMG', 'EMG');
-		} catch {
-			console.log("Channels not found.");
-		}
-		await sleep(" ");
-		refresh_channelselection();
-	}
+      await select_channel_for_scoring('#EEG2', 'C4-M1');
+      await select_channel_for_scoring('#EOG1', 'LOC');
+      await select_channel_for_scoring('#EOG2', 'ROC');
+      await select_channel_for_scoring('#EMG', 'EMG');
+    } catch {
+      console.log("Channels not found.");
+    }
+    await sleep(" ");
+    refresh_channelselection();
+  }
 
   function build_dataloader() {
-		edffile.set_model(model);
+    edffile.set_model(model);
     dataloader = edffile.dataloader(model);
   }
 
-	async function load_selected_file () {
-		var files = document.getElementById('fileSelector').files;
-		await sleep("Loading edf file '"+files[0].name+"' ..");
+  async function load_selected_file () {
+    var files = document.getElementById('fileSelector').files;
+    await sleep("Loading edf file '"+files[0].name+"' ..");
     edffile = await FilteredEDF().from_file(files[0], header_only=false);
-		figure = PlottingArea("figure", edffile, 30.0);
-		refresh_navbar();
-		slider = Slider("slider", [figure], 30.0).build();
-		if (hypnogram !== null) {
-			slider.register(hypnogram);
-		}
-		if (model === null) {
-			load_model();
-		}
-		await sleep("");
-	}
+    figure = PlottingArea("figure", edffile, 30.0);
+    refresh_navbar();
+    slider = Slider("slider", [figure], 30.0).build();
+    if (hypnogram !== null) {
+      slider.register(hypnogram);
+    }
+    if (model === null) {
+      load_model();
+    }
+    await sleep("");
+  }
 
-	async function load_selected_annots() {
-		var files = document.getElementById('scoreSelector').files;
-		await sleep("Loading annotations file "+files[0].name+" ..");
-		annotations = await Annotations().load(files[0]);
-		show_hypnogram();
-		await sleep("");
-	}
+  async function load_selected_annots() {
+    var files = document.getElementById('scoreSelector').files;
+    await sleep("Loading annotations file "+files[0].name+" ..");
+    annotations = await Annotations().load(files[0]);
+    show_hypnogram();
+    await sleep("");
+  }
 
-	function show_hypnogram() {
-		if (hypnogram !== null && slider !== null) {
-			slider.remove(hypnogram);
-		}
-		hypnogram = Hypnogram("hypnogram", annotations);
-		hypnogram.create_new_plot();
-		if (slider !== null) {
-			slider.register(hypnogram);
-		}
-	}
+  function show_hypnogram() {
+    if (hypnogram !== null && slider !== null) {
+      slider.remove(hypnogram);
+    }
+    hypnogram = Hypnogram("hypnogram", annotations);
+    hypnogram.create_new_plot();
+    if (slider !== null) {
+      slider.register(hypnogram);
+    }
+  }
 
-	function clear_filecache () {
+  function clear_filecache () {
     figure.del(); delete figure; figure = null;
-		slider.del(); delete slider; slider = null;
-		delete edffile; edffile = null;
-		delete model; model = null;
-		delete hypnogram; hypnogram = null;
-		delete annotations; annotations = null;
-		refresh_navbar();
-		refresh_channelselection();
-		document.getElementById('hypnogram').value = "";
-		document.getElementById('fileSelector').value = "";
-		document.getElementById('scoreSelector').value = "";
-	}
+    slider.del(); delete slider; slider = null;
+    delete edffile; edffile = null;
+    delete model; model = null;
+    delete hypnogram; hypnogram = null;
+    delete annotations; annotations = null;
+    channel_cache = {};
+    refresh_navbar();
+    refresh_channelselection();
+    document.getElementById('hypnogram').value = "";
+    document.getElementById('fileSelector').value = "";
+    document.getElementById('scoreSelector').value = "";
+  }
 
-	function refresh_navbar() {
+  function refresh_navbar() {
     var nav = document.getElementById("nav");
     var txt = "";
     if (figure != null) {
-			var channels = figure.channels();
+      var channels = figure.channels();
       for (var c in figure.channels()) {
         var C = channels[c];
         txt += "<li";
@@ -176,65 +179,74 @@
       txt += "<li class='clear' onclick='clear_filecache()'>Close file</li>";
     }
     nav.innerHTML = txt;
-	}
+  }
 
-	async function refresh_channelselection() {
-		var txt = "";
-		if (model != null && edffile != null && edffile.channel_by_label != null) {
+  async function refresh_channelselection() {
+    var txt = "";
+    if (model != null && edffile != null && edffile.channel_by_label != null) {
       await model.config;
-			var all_selected = true;
-			for (i in model.config.input.channels) {
-				txt += "<div class='dropdown tooltip'>";
-				txt += "<span class='tooltiptext'>Select Input Channels for Automatic Sleep Staging</span>";
-				var input_channel = model.config.input.channels[i];
-				txt += "<button onclick='toggleDropdown(\""+input_channel+"\")' class='dropbtn'>";
-				txt += input_channel;
-				if (input_channel in edffile.channel_by_label) {
-					txt += " ("+edffile.channel_by_label[input_channel].label+")";
-				} else {
-					all_selected = false;
-				}
-				txt += "</button>";
-				txt += "<div id='"+input_channel+"' class='dropdown-content'>";
-				txt += "<ul>";
-				for (var c in edffile.channels) {
-					target_channel = edffile.channels[c].label;
-					txt += "<li onclick='select_channel_for_scoring(\""+input_channel+"\", \""+target_channel+"\")'>"+target_channel+"</li>";
-				}
-				txt += "</ul>";
-				txt += "</div>";
-				txt += "</div>";
+      var all_selected = true;
+      for (i in model.config.input.channels) {
+        txt += "<div class='dropdown tooltip'>";
+        txt += "<span class='tooltiptext'>Select Input Channels for Automatic Sleep Staging</span>";
+        var input_channel = model.config.input.channels[i];
+        txt += "<button onclick='toggleDropdown(\""+input_channel+"\")' class='dropbtn'>";
+        txt += input_channel;
+        if (input_channel in channel_cache) {
+          txt += " ("+channel_cache[input_channel]+")";
+        } else {
+          all_selected = false;
+        }
+        txt += "</button>";
+        txt += "<div id='"+input_channel+"' class='dropdown-content'>";
+        txt += "<ul>";
+        for (var c in edffile.channels) {
+          target_channel = edffile.channels[c].label;
+          txt += "<li onclick='select_channel_for_scoring(\""+input_channel+"\", \""+target_channel+"\")'>"+target_channel+"</li>";
+        }
+        txt += "</ul>";
+        txt += "</div>";
+        txt += "</div>";
       }
-			if (all_selected) {
-				txt += "<button onclick='predict()' class='dropbtn exec'>Predict All Stages</button>";
-			} else {
-				txt += "<button onclick='alert(\"All channels need to be selected\")' class='dropbtn exec'>Predict All Stages</button>";
-			}
+      if (all_selected) {
+        txt += "<button onclick='predict()' class='dropbtn exec'>Predict All Stages</button>";
+      } else {
+        txt += "<button onclick='alert(\"All channels need to be selected\")' class='dropbtn exec'>Predict All Stages</button>";
+      }
     }
     document.getElementById("channelSelection").innerHTML = txt;
-	}
+  }
 
-	async function select_channel_for_scoring (input_channel, target_channel) {
-		await sleep("Caching "+target_channel+" as "+input_channel);
-		await edffile.cache_channel(target_channel, input_channel, model.config.input.sampling_rate)
-		await sleep(" ");
-		refresh_channelselection();
-	}
+  async function cache_channels_for_scoring () {
+    for (var i in model.config.input.channels) {
+      var input_channel = model.config.input.channels[i];
+      await sleep("Caching "+channel_cache[input_channel]+" as "+input_channel);
+      await edffile.cache_channel(channel_cache[input_channel], input_channel, model.config.input.sampling_rate)
+    }
+    await sleep(" ");
+  }
 
-	function toggleDropdown (input_channel) {
-		document.getElementById(input_channel).classList.toggle("show");
-	}
+  function select_channel_for_scoring (input_channel, target_channel) {
+    if (target_channel in edffile.channel_by_label) {
+      channel_cache[input_channel] = target_channel;
+      refresh_channelselection();
+    }
+  }
 
-	async function setup(evt) {
-		var fileSelector = document.getElementById('fileSelector');
-		var scoreSelector = document.getElementById('scoreSelector');
-		if (fileSelector.value != "") {
+  function toggleDropdown (input_channel) {
+    document.getElementById(input_channel).classList.toggle("show");
+  }
+
+  async function setup(evt) {
+    var fileSelector = document.getElementById('fileSelector');
+    var scoreSelector = document.getElementById('scoreSelector');
+    if (fileSelector.value != "") {
       await load_selected_file();
-		}
-		if (scoreSelector.value != "") {
-			await load_selected_annots();
-		}
-	}
+    }
+    if (scoreSelector.value != "") {
+      await load_selected_annots();
+    }
+  }
 
 </script>
 </head>
@@ -243,8 +255,8 @@
 <div class="container">
 
 <header>
-	<h3>EDF Staging Controller (BETA Version)</h3>
-	<hr>
+  <h3>EDF Staging Controller (BETA Version)</h3>
+  <hr>
   <div style="text-align:right">
     <label for="fileSelector">EDF-file</label>
     <input type="file" id="fileSelector" onchange="load_selected_file()" accept=".edf"/>
@@ -267,7 +279,7 @@
 </article>
 
 <footer>Powered by <a href="https://plot.ly">plotly</a> and  <a href="https://js.tensorflow.org">TensorFlow.js</a><br>
-	Copyright &copy; <a href="https://github.com/jusjusjus">jusjusjus</a></footer>
+Copyright &copy; <a href="https://github.com/jusjusjus">jusjusjus</a></footer>
 
 </div>
 
