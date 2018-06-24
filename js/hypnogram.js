@@ -81,7 +81,7 @@ var Hypnogram = function (element_id, annotations, self) {
     // data
     var data = [];
     var d = labels2curve(self.annotations);
-    layout.xaxis.range = [0, d.x[0][d.x[0].length-1]];
+    layout.xaxis.range = [0, d.x[0][d.x[0].length-1]+0.1];
     var points = {
       type: 'scatter',
       x: d.x[0], y: d.y[0],
