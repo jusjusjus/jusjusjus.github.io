@@ -70,16 +70,18 @@ var Hypnogram = function (element_id, annotations, self) {
       paper_bgcolor: rgb(0.94,0.99,0.75),
       showlegend: false,
       xaxis: {title: "relative time (hours)"},
-      margin: { t: 0, b: 30, l: 40, r: 20 },
+      margin: {t: 0, b: 30, l: 40, r: 20},
       yaxis: {
         tickvals: [0, 1, 2, 3, 4],
         ticktext: hash2label,
         zeroline: false
-      }
+      },
+      xaxis: {}
     };
     // data
     var data = [];
     var d = labels2curve(self.annotations);
+    layout.xaxis.range = [0, d.x[0][d.x[0].length-1]];
     var points = {
       type: 'scatter',
       x: d.x[0], y: d.y[0],
@@ -128,8 +130,10 @@ var Hypnogram = function (element_id, annotations, self) {
   function redraw() {
     var drawingArea = document.getElementById("hypnogramDrawingArea");
     var curve = labels2curve(self.annotations);
+    var layout = {'xaxis.range[1]': curve.x[0][curve.x[0].length-1]+0.1};
     Plotly.restyle(drawingArea, curve, 0);
     Plotly.restyle(drawingArea, curve, 1);
+    Plotly.relayout(drawingArea, layout);
   }
 
   self.del = del;
