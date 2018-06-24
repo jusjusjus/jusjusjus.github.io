@@ -58,6 +58,7 @@
         }
         annotations.stream_probs(probs);
         hypnogram.redraw();
+        slider.set_time(ii);
         await sleep("Progress: scoring epoch "+ii+" of "+dataloader.length);
         result.dispose();
         for(var b in batch) {
@@ -168,7 +169,7 @@
       var channels = figure.channels();
       for (var c in figure.channels()) {
         var C = channels[c];
-        txt += "<li";
+        txt += "<li id='"+C.label+"'";
         if (C.selected) {
           txt += " class='selected'";
         } else {
@@ -228,6 +229,10 @@
 
   function select_channel_for_scoring (input_channel, target_channel) {
     if (target_channel in edffile.channel_by_label) {
+      if (input_channel in channel_cache) {
+        document.getElementById(channel_cache[input_channel]).click();
+      }
+      document.getElementById(target_channel).click();
       channel_cache[input_channel] = target_channel;
       refresh_channelselection();
     }

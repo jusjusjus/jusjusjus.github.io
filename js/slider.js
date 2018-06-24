@@ -24,6 +24,12 @@ var Slider = function(element_id, figures, sec) {
     return document.getElementById(self.element_id);
   }
 
+  self.set_time = function (n) {
+    document.getElementById("currTime").value = n;
+    document.getElementById("sliderFrame").dispatchEvent(
+      new Event("input"));
+  }
+
   self.build = function () {
     var max = parseInt(self.figures[0].duration/self.step);
     var txt = "";
