@@ -89,12 +89,15 @@ var Annotations = function (dt, labels, self) {
 
   self.stream_probs = function (probs) {
     assert(self.dt !== null, "time step `Annotations.dt` not set.");
-    var t00 = self.t0.length > 0 ? self.t0[self.t0.length-1]+self.dt : 0.0;
+    var t00 = self.t0.length > 0 ? self.t0[self.t0.length-1]+self.dt : 0.0,
+        i = 0,
+        imax = argmax(probs[i]);
     self.t0.push(t00);
-    self.labels.push(hash2label[argmax(probs[0])]);
-    self.probabilities.push(probs[0]);
-    for(var i=1; i<probs.length; i++) {
-      var imax = argmax(probs[i]);
+    self.labels.push(hash2label[imax]);
+    self.probabilities.push(probs[i]);
+    self.max_probs.push(probs[i][imax]);
+    for(i=1; i<probs.length; i++) {
+      imax = argmax(probs[i]);
       self.t0.push(self.t0[self.t0.length-1]+self.dt);
       self.labels.push(hash2label[imax]);
       self.probabilities.push(probs[i]);
@@ -131,8 +134,8 @@ var Annotations = function (dt, labels, self) {
           for (var l in self.labels) {
             var label = self.labels[l]
             var imax = label2hash[label];
-            self.probabilities[l] = one_hot(imax, labels.length);
             self.max_probs.push(1.0);
+            self.probabilities[l] = one_hot(imax, labels.length);
           }
           resolve(self);
         });
