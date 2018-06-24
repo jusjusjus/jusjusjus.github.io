@@ -18,8 +18,7 @@ var get_filter = function (fs, fc) {
 
 var linear_downsample = function (X, sr_old, sr_new) {
   var F = get_filter(sr_old, 0.4*sr_new);
-  X = F.multiStep(X);
-  X = F.multiStep(X);
+  X = F.filtfilt(X);
   var t = Float32Array.from(
     new Array(Math.round((X.length-1)*sr_new/sr_old)),
       (val, idx)=>idx*sr_old/sr_new
