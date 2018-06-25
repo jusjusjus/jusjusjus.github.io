@@ -7,12 +7,15 @@
 <script src="https://cdn.plot.ly/plotly-1.38.3.min.js"></script>
 <!-- <script src="../js/edf.min.js"></script> -->
 <script src="https://unpkg.com/edfjs"></script>
+<script src="../js/util.js"></script>
+<script src="../js/keyboard.js"></script>
 <script src="../js/plotting_area.js"></script>
 <script src="../js/slider.js"></script>
 <script>
 	var edffile = null;
 	var figure = null;
 	var slider = null;
+  var keyboard = Keyboard();
 
 	async function load_selected_file () {
 		var files = document.getElementById('fileSelector').files;
@@ -20,6 +23,8 @@
 		figure = PlottingArea("figure", edffile);
 		refresh_navbar();
 		slider = Slider('slider', [figure]).build();
+    keyboard.add("ArrowLeft", ()=>{slider.set_time(1*slider.value-1)});
+    keyboard.add("ArrowRight", ()=>{slider.set_time(1*slider.value+1)});
 	}
 
 	function clear_filecache () {
@@ -31,6 +36,7 @@
 		edffile = null;
 		figure = null;
 		slider = null;
+    keyboard.remove_all();
 		refresh_navbar();
 		document.getElementById('fileSelector').value = "";
 	}
@@ -50,7 +56,7 @@
         }
         txt += " onclick='figure.switch_selection("+c+", refresh_navbar)'>"+C.label+"</li>";
       }
-      txt += "<li class='clear' onclick='clear_filecache()'>Clear</li>";
+      txt += "<li class='clear' onclick='clear_filecache()'>Close file</li>";
     }
     nav.innerHTML = txt;
 	}

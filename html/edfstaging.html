@@ -17,6 +17,7 @@
 <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.11.7"> </script> -->
 <script src="../js/tfjs-0.11.6-mod.js"></script>
 <script src="../js/util.js"></script>
+<script src="../js/keyboard.js"></script>
 <script src="../js/filtered_edf.js" type="module"></script>
 <script src="../js/plotting_area.js"></script>
 <script src="../js/hypnogram.js"></script>
@@ -32,6 +33,7 @@
   var dataloader = null;
   var channel_cache = {};
   var annotations = null;
+  var keyboard = Keyboard();
 
   var prediction_lock = false;
   async function predict() {
@@ -119,6 +121,8 @@
     figure = PlottingArea("figure", edffile, 30.0);
     refresh_navbar();
     slider = Slider("slider", [figure], 30.0).build();
+    keyboard.add("ArrowLeft", ()=>{slider.set_time(1*slider.value-1)});
+    keyboard.add("ArrowRight", ()=>{slider.set_time(1*slider.value+1)});
     if (hypnogram !== null) {
       slider.register(hypnogram);
     }
@@ -136,36 +140,6 @@
     await sleep("");
   }
 
-  var ui_key_map = {
-    "w": ()=>{
-      var ii = 1*slider.value;
-      annotations.set_stage(ii, "Wake");
-      slider.set_time(ii+1);
-    },
-    "r": ()=>{
-      var ii = 1*slider.value;
-      annotations.set_stage(ii, "R");
-      slider.set_time(ii+1);
-    },
-    "1": ()=>{
-      var ii = 1*slider.value;
-      annotations.set_stage(ii, "N1");
-      slider.set_time(ii+1);
-    },
-    "2": ()=>{
-      var ii = 1*slider.value;
-      annotations.set_stage(ii, "N2");
-      slider.set_time(ii+1);
-    },
-    "3": ()=>{
-      var ii = 1*slider.value;
-      annotations.set_stage(ii, "N3");
-      slider.set_time(ii+1);
-    },
-    "ArrowLeft": ()=>{slider.set_time(1*slider.value-1)},
-    "ArrowRight": ()=>{slider.set_time(1*slider.value+1)},
-  };
-
   function show_hypnogram() {
     if (hypnogram !== null && slider !== null) {
       slider.remove(hypnogram);
@@ -175,8 +149,30 @@
     if (slider !== null) {
       slider.register(hypnogram);
     }
-    document.addEventListener("keypress", (k)=>{
-      ui_key_map[k.key]();
+    keyboard.add("w", ()=>{
+      var ii = 1*slider.value;
+      annotations.set_stage(ii, "Wake");
+      slider.set_time(ii+1);
+    });
+    keyboard.add("r", ()=>{
+      var ii = 1*slider.value;
+      annotations.set_stage(ii, "R");
+      slider.set_time(ii+1);
+    });
+    keyboard.add("1", ()=>{
+      var ii = 1*slider.value;
+      annotations.set_stage(ii, "N1");
+      slider.set_time(ii+1);
+    });
+    keyboard.add("2", ()=>{
+      var ii = 1*slider.value;
+      annotations.set_stage(ii, "N2");
+      slider.set_time(ii+1);
+    });
+    keyboard.add("3", ()=>{
+      var ii = 1*slider.value;
+      annotations.set_stage(ii, "N3");
+      slider.set_time(ii+1);
     });
   }
 
