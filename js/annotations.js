@@ -69,19 +69,30 @@ var CSV = function (self, data) {
   self.data = data || null;
 
   var transform = function (v, c) {
-    return trafo[c](v);
+    try {
+      return trafo[c](v);
+    } catch {
+      console.warn("string trafo of", c,"for value", v,"is not defined.");
+      return v;
+    }
   }
 
   var trafo = {
     '#Onset': (v) => new Date(v+'Z'),
+    't0': (v) => new Date(v+'Z'),
     Duration: (v) => parseFloat(v),
-    Annotation: (v) => v
+    'dt': (v) => parseFloat(v),
+    Annotation: (v) => v,
+    label: (v) => v
   }
 
   var colname_map = {
     '#Onset': 'start',
+    't0': 'start',
     'Duration': 'dt',
-    'Annotation': 'label'
+    'dt': 'dt',
+    'Annotation': 'label',
+    'label': 'label'
   }
 
   var oncomplete = function (callback) {

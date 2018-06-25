@@ -101,12 +101,14 @@ var PlottingArea = function (element_id, edffile, window_duration, self) {
     var drawingArea = document.getElementById("drawingArea");
     var selected_labels = get_selected_labels();
     var Y = await self.file.get_physical_samples(window_start, window_duration, selected_labels);
+    var update = {x: [], y: []};
     for (var c in selected_labels) {
       var l = selected_labels[c];
       var sr = self.file.sampling_rate[l];
-      var x = Float32Array.from(new Array(Y[l].length), (val, idx)=>idx/sr)
-      Plotly.restyle(drawingArea, {'x': x, 'y': Y[l]}, c);
+      update.x[c] = Float32Array.from(new Array(Y[l].length), (val, idx)=>idx/sr);
+      update.y[c] = Y[l];
     }
+    Plotly.restyle(drawingArea, update);
   }
 
   self.channels = function () { return self.file.channels; };
