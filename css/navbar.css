@@ -1,0 +1,116 @@
+
+/* Dropdown container `div` */
+.navbar-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+/* Dropdown button */
+.navbar-dropbtn {
+	float: left;
+  background-color: #3498DB; /* blue */
+  color: white;
+  padding: 6px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+}
+
+.navbar-dropbtn:hover {
+  background-color: #2980B9;
+}
+
+.navbar-selected {
+  color: black;
+  background-color: #3498DB; /* blue */
+	display: block;
+	border: 3px solid #effebe;
+	border-radius: 7px;
+	text-align: center;
+	padding: 4px 10px;
+  cursor: pointer;
+}
+
+.navbar-selected:hover {
+	background-color: red;
+}
+
+.navbar-dropdown-content {
+  display: none; /* hidden */
+  position: absolute;
+  background-color: #2980B9; /* blue? */
+  color: white;
+  font-size: 7;
+  min-width: 160px;
+  height: 300px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  padding 12px 16px;
+}
+
+/* Links inside the dropdown */
+.navbar-dropdown-content ul {
+  height: 160px;
+  overflow: hidden;
+  overflow-y: scroll;
+}
+
+.navbar-dropdown-content li {
+  color: white;
+  padding: 3px 3px;
+  text-decoration: none;
+  font-family: Monospace;
+  display: block;
+}
+
+.navbar-dropdown-content li:hover {
+  background-color: #55a
+}
+
+/* Activated in js/navbar.js:16 */
+.show {
+  display:block;
+} 
+
+#nav {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	background-color: #effebe;
+	top: 0;
+	/* overflow: hidden; */
+}
+/*  */
+/* #nav li { */
+/* 	float: left; */
+/* 	display: block; */
+/* 	border: 3px solid #effebe; */
+/* 	border-radius: 7px; */
+/* 	text-align: center; */
+/* 	padding: 4px 10px; */
+/* } */
+/*  */
+/* #nav li.unselected { */
+/* 	color: white; */
+/* 	background-color: #fc8236; */
+/* } */
+/*  */
+/* #nav li:hover.unselected { */
+/* 	color: black; */
+/* 	background-color: #fc8236; */
+/* } */
+/*  */
+/* #nav li:hover,.selected { */
+/* 	color: black; */
+/* 	background-color: #2bf5e6; */
+/* } */
+/*  */
+/* #nav li.clear { */
+/* 	color: black; */
+/*   background-color: #f8c68d; */
+/* } */
+/*  */
+/* .filebutton { */
+/* 	color: black; */
+/*   background-color: #f8c68d; */
+/* } */
