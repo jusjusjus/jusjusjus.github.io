@@ -1,18 +1,10 @@
 
-function assert(condition, msg) {
-  if (!condition) {
-    console.error(msg);
-    throw msg;
-  }
-}
-
 var row2col = function (rows) {
-  // for (var r in rows) assert(rows[r].length == col_names.length, "Invalid length:"+rows[i]);
   var cols = {};
   for (var c in rows[0]) cols[c] = [];
   for (var r in rows) {
     var row = rows[r];
-    assert(row.length == cols.length, "Invalid length:"+row);
+    assert(row.length == cols.length, "row2col: Invalid length ["+row+"]");
     for (var c in row) {
       cols[c].push(row[c]);
     }
@@ -20,9 +12,61 @@ var row2col = function (rows) {
   return cols;
 }
 
-var CSV = function (self) {
+var col2row = function (cols) {
+  var rows = [],
+      num_cols = cols.length,
+      num_rows = cols[0].length,
+      r, c;
+  for (r=0; r<num_rows; r++) {
+    rows[r] = []
+    for(c=0; c<num_cols; c++) {
+      rows[r][c] = cols[c][r];
+    }
+  }
+  return rows;
+}
+
+// From:
+// https://stackoverflow.com/questions/21012580/is-it-possible-to-write-data-to-file-using-only-javascript
+function download(strData, strFileName, strMimeType) {
+  var D = document,
+      A = arguments,
+      a = D.createElement("a"),
+      d = A[0],
+      n = A[1],
+      t = A[2] || "text/plain";
+
+  a.href = "data:" + strMimeType + "charset=utf-8," + escape(strData);
+
+  if (window.MSBlobBuilder) {
+      var bb = new MSBlobBuilder();
+      bb.append(strData);
+      return navigator.msSaveBlob(bb, strFileName);
+  }
+
+  if ('download' in a) {
+      a.setAttribute("download", n);
+      a.innerHTML = "downloading...";
+      D.body.appendChild(a);
+      setTimeout(function() {
+          var e = D.createEvent("MouseEvent");
+          e.initMouseEvent("click", true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+          a.dispatchEvent(e);
+          D.body.removeChild(a);
+      }, 66);
+      return true;
+  };
+  var f = D.createElement("iframe");
+  D.body.appendChild(f);
+  f.src = "data:" + (A[2] ? A[2] : "application/octet-stream") + (window.btoa ? ";base64" : "") + "," + (window.btoa ? window.btoa : escape)(strData);
+  setTimeout(()=>{D.body.removeChild(f)}, 333);
+  return true;
+}
+
+
+var CSV = function (self, data) {
   self = self || {};
-  self.data = null;
+  self.data = data || null;
 
   var transform = function (v, c) {
     return trafo[c](v);
@@ -61,9 +105,9 @@ var CSV = function (self) {
     return self;
   }
 
-  self.save = function () {
-    str = Papa.unparse(self.data);
-    console.log(str);
+  self.save = function (filename) {
+    text = Papa.unparse(self.data);
+    download(text, filename);
   }
   return self;
 }
@@ -103,6 +147,7 @@ var Annotations = function (dt, labels, self) {
       self.probabilities.push(probs[i]);
       self.max_probs.push(probs[i][imax]);
     }
+    document.dispatchEvent(new Event("annotations_changed"));
   }
   
   self.from_probs = function (dt, probs) {
@@ -117,6 +162,14 @@ var Annotations = function (dt, labels, self) {
       self.labels.push(hash2label[imax]);
     }
     return self;
+  }
+
+  self.set_stage = function (n, stage) {
+    var idx = label2hash[stage]
+    self.labels[n] = stage;
+    self.max_probs[n] = 1;
+    self.probabilities[n] = one_hot(idx, labels.length);
+    document.dispatchEvent(new Event("annotations_changed"));
   }
   
   self.load = function (file) {
@@ -134,7 +187,8 @@ var Annotations = function (dt, labels, self) {
           for (var l in self.labels) {
             var label = self.labels[l]
             var imax = label2hash[label];
-            self.max_probs.push(1.0);
+            self.t0.push(l*30);
+            self.max_probs.push(1);
             self.probabilities[l] = one_hot(imax, labels.length);
           }
           resolve(self);
@@ -148,5 +202,20 @@ var Annotations = function (dt, labels, self) {
       }
     })
   }
+
+  self.save = function(filename) {
+    filename = filename || 'annotation.csv';
+    var fields = ['t0', 'label'];
+    var dataT = [self.t0, self.labels];
+    if (self.max_probs.length == self.labels.length) {
+      fields.push('P');
+      dataT.push(self.max_probs);
+    }
+    CSV(null, {
+      'fields': fields,
+      'data': col2row(dataT)
+    }).save(filename);
+  }
+
   return self;
 }

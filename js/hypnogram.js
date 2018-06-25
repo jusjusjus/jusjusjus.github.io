@@ -4,6 +4,7 @@
 var Hypnogram = function (element_id, annotations, self) {
   self = self || {};
 
+
   self.element_id = element_id;
   self.element = function () { return document.getElementById(self.element_id); };
   self.annotations = annotations;
@@ -27,6 +28,7 @@ var Hypnogram = function (element_id, annotations, self) {
 
   function create_drawing_area() {
     var txt = "<div class='hypnogramDrawingArea' id='hypnogramDrawingArea' style='height:150px;width:100%;'></div>";
+    txt += "<p style='text-align:right'><button class='filebutton' onclick='annotations.save()'>Download as csv</button></p>";
     self.element().innerHTML = txt;
   }
 
@@ -135,6 +137,8 @@ var Hypnogram = function (element_id, annotations, self) {
     Plotly.restyle(drawingArea, curve, 1);
     Plotly.relayout(drawingArea, layout);
   }
+
+  document.addEventListener("annotations_changed", redraw);
 
   self.del = del;
   self.set_time = set_time;

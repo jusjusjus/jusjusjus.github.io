@@ -42,10 +42,11 @@
     build_dataloader();
     const batch_size = 64;
     const num_classes = 5;
-    var batch = [];
+    var batch = [],
+        ii;
     annotations = Annotations(model.config.input.duration);
     show_hypnogram();
-    for (var ii=0; ii<dataloader.length; ii++) {
+    for (ii=0; ii<dataloader.length; ii++) {
       batch.push(await dataloader.get(ii));
       if (batch_size == batch.length) {
         const result = tf.tidy( () => {
@@ -58,7 +59,6 @@
           probs.push(arr.slice(e, e+num_classes));
         }
         annotations.stream_probs(probs);
-        hypnogram.redraw();
         slider.set_time(ii);
         await sleep("Progress: scoring epoch "+ii+" of "+dataloader.length);
         result.dispose();
@@ -80,7 +80,6 @@
         probs.push(arr.slice(e, e+num_classes));
       }
       annotations.stream_probs(probs);
-      hypnogram.redraw();
       result.dispose();
       for(var b in batch) {
         batch[b].dispose();
@@ -96,11 +95,11 @@
     model = Model();
     await model.load_model();
     try {
-      await select_channel_for_scoring('#EEG1', 'EEG C3-A2');
-      await select_channel_for_scoring('#EEG2', 'EEG C4-A1');
-      await select_channel_for_scoring('#EOG1', 'EOG Left');
-      await select_channel_for_scoring('#EOG2', 'EOG Right');
-      await select_channel_for_scoring('#EMG', 'EMG Chin');
+      await select_channel_for_scoring("#EEG1", "EEG C3-A2");
+      await select_channel_for_scoring("#EEG2", "EEG C4-A1");
+      await select_channel_for_scoring("#EOG1", "EOG Left");
+      await select_channel_for_scoring("#EOG2", "EOG Right");
+      await select_channel_for_scoring("#EMG", "EMG Chin");
     } catch {
       console.log("Channels not found.");
     }
@@ -114,7 +113,7 @@
   }
 
   async function load_selected_file () {
-    var files = document.getElementById('fileSelector').files;
+    var files = document.getElementById("fileSelector").files;
     await sleep("Loading edf file '"+files[0].name+"' ..");
     edffile = await FilteredEDF().from_file(files[0], header_only=false);
     figure = PlottingArea("figure", edffile, 30.0);
@@ -137,6 +136,36 @@
     await sleep("");
   }
 
+  var ui_key_map = {
+    "w": ()=>{
+      var ii = 1*slider.value;
+      annotations.set_stage(ii, "Wake");
+      slider.set_time(ii+1);
+    },
+    "r": ()=>{
+      var ii = 1*slider.value;
+      annotations.set_stage(ii, "R");
+      slider.set_time(ii+1);
+    },
+    "1": ()=>{
+      var ii = 1*slider.value;
+      annotations.set_stage(ii, "N1");
+      slider.set_time(ii+1);
+    },
+    "2": ()=>{
+      var ii = 1*slider.value;
+      annotations.set_stage(ii, "N2");
+      slider.set_time(ii+1);
+    },
+    "3": ()=>{
+      var ii = 1*slider.value;
+      annotations.set_stage(ii, "N3");
+      slider.set_time(ii+1);
+    },
+    "ArrowLeft": ()=>{slider.set_time(1*slider.value-1)},
+    "ArrowRight": ()=>{slider.set_time(1*slider.value+1)},
+  };
+
   function show_hypnogram() {
     if (hypnogram !== null && slider !== null) {
       slider.remove(hypnogram);
@@ -146,6 +175,9 @@
     if (slider !== null) {
       slider.register(hypnogram);
     }
+    document.addEventListener("keypress", (k)=>{
+      ui_key_map[k.key]();
+    });
   }
 
   function clear_filecache () {
