@@ -106,7 +106,7 @@ var Hypnogram = function (element_id, annotations, self) {
       yaxis: "y"
     };
     var vert = {
-      x: [window_start, window_start], y: [0, 4],
+      x: [window_start, window_start], y: [-0.5, 4.5],
       mode: "lines", 
       line: { color: rgb(0.25,0.25,0.25), width: 2.0 },
     };

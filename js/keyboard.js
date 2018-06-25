@@ -1,6 +1,6 @@
 
 var Keyboard = function() {
-  self = {};
+  var self = {};
   keymap = {};
   self.add = function (key, callback) {
     keymap[key] = callback;
