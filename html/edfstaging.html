@@ -4,6 +4,7 @@
 <link rel="stylesheet" type='text/css' href="../css/edfbase.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfdataviewer.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfstaging.css"></style>
+<link rel="stylesheet" type='text/css' href="../css/navbar.css"></style>
 <!-- <script src="../js/plotly&#45;latest.min.js"></script> -->
 <script src="https://cdn.plot.ly/plotly-1.38.3.min.js"></script>
 <!-- <script src="../js/edf.min.js"></script> -->
@@ -18,6 +19,7 @@
 <script src="../js/tfjs-0.11.6-mod.js"></script>
 <script src="../js/util.js"></script>
 <script src="../js/keyboard.js"></script>
+<script src="../js/navbar.js"></script>
 <script src="../js/filtered_edf.js" type="module"></script>
 <script src="../js/plotting_area.js"></script>
 <script src="../js/hypnogram.js"></script>
@@ -34,6 +36,7 @@
   var channel_cache = {};
   var annotations = null;
   var keyboard = Keyboard();
+  var navbar = Navbar("nav");
 
   var prediction_lock = false;
   async function predict() {
@@ -119,13 +122,10 @@
     await sleep("Loading edf file '"+files[0].name+"' ..");
     edffile = await FilteredEDF().from_file(files[0], header_only=false);
     figure = PlottingArea("figure", edffile, 30.0);
-    refresh_navbar();
+    navbar.refresh();
     slider = Slider("slider", [figure], 30.0).build();
     keyboard.add("ArrowLeft", ()=>{slider.set_time(1*slider.value-1)});
     keyboard.add("ArrowRight", ()=>{slider.set_time(1*slider.value+1)});
-    if (hypnogram !== null) {
-      slider.register(hypnogram);
-    }
     if (model === null) {
       load_model();
     }
@@ -184,31 +184,11 @@
     delete hypnogram; hypnogram = null;
     delete annotations; annotations = null;
     channel_cache = {};
-    refresh_navbar();
+    navbar.refresh();
     refresh_channelselection();
     document.getElementById('hypnogram').value = "";
     document.getElementById('fileSelector').value = "";
     document.getElementById('scoreSelector').value = "";
-  }
-
-  function refresh_navbar() {
-    var nav = document.getElementById("nav");
-    var txt = "";
-    if (figure != null) {
-      var channels = figure.channels();
-      for (var c in figure.channels()) {
-        var C = channels[c];
-        txt += "<li id='"+C.label+"'";
-        if (C.selected) {
-          txt += " class='selected'";
-        } else {
-          txt += " class='unselected'";
-        }
-        txt += " onclick='figure.switch_selection("+c+", refresh_navbar)'>"+C.label+"</li>";
-      }
-      txt += "<li class='clear' onclick='clear_filecache()'>Close file</li>";
-    }
-    nav.innerHTML = txt;
   }
 
   async function refresh_channelselection() {
@@ -259,11 +239,12 @@
   function select_channel_for_scoring (input_channel, target_channel) {
     if (target_channel in edffile.channel_by_label) {
       if (input_channel in channel_cache) {
-        document.getElementById(channel_cache[input_channel]).click();
+        figure.switch_selection(channel_cache[input_channel]);
       }
-      document.getElementById(target_channel).click();
       channel_cache[input_channel] = target_channel;
+      figure.switch_selection(target_channel);
       refresh_channelselection();
+      navbar.refresh();
     }
   }
 

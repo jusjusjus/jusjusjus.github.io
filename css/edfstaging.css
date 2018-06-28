@@ -32,6 +32,16 @@
     display: inline-block;
 }
 
+#hypnogramInfo td, #hypnogramInfo th {
+  font-family: Monospace;
+  font-size: 14pt;
+  border: 1px solid #ddd;
+  padding: 4px;
+  text-align: right;
+  width: 50px;
+  background-color: lightgrey;
+}
+
 /* Dropdown Content (Hidden by Default) */
 .dropdown-content {
     display: none;

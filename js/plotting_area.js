@@ -37,7 +37,11 @@ var PlottingArea = function (element_id, edffile, window_duration, self) {
   }
 
   function switch_selection(c, callback) {
-    self.file.channels[c].selected = !(self.file.channels[c].selected);
+    if (typeof c === "number") {
+      self.file.channels[c].selected = !(self.file.channels[c].selected);
+    } else if (typeof c === "string") {
+      self.file.channel_by_label[c].selected = !(self.file.channel_by_label[c].selected);
+    }
     if (callback) { callback(); }
     create_new_plot();
   }

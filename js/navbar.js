@@ -26,32 +26,24 @@ var Navbar = function (element_id) {
     self.refresh();
   }
 
-  self.refresh = function () {
+	self.refresh = function () {
     var txt = "";
-    var selected = [];
     if (figure != null) {
-      var channels = figure.channels();
-      txt += "<div class='navbar-dropdown'>";
-        txt += "<button onclick='navbar.toggleDropdown()' class='navbar-dropbtn'>Select Channels</button>";
-        txt += "<div id='"+channelList_id+"' class='navbar-dropdown-content'>";
-          txt += "<ul>";
-          for (var c in channels) {
-            var C = channels[c];
-            if (!C.selected) {
-              txt += html_item('li', c, C.label);
-            } else {
-              selected.push(c);
-            }
-          }
-          txt += "</ul>";
-        txt += "</div>";
-        for (var i in selected) {
-          txt += html_item('button', selected[i], channels[selected[i]].label, 'navbar-selected');
+			var channels = figure.channels();
+      for (var c in figure.channels()) {
+        var C = channels[c];
+        txt += "<li";
+        if (C.selected) {
+          txt += " class='selected'";
+        } else {
+          txt += " class='unselected'";
         }
-      txt += "</div>";
-      self.element().innerHTML = txt;
+        txt += " onclick='figure.switch_selection("+c+", navbar.refresh)'>"+C.label+"</li>";
+      }
+      txt += "<li class='clear' onclick='clear_filecache()'>Close file</li>";
     }
-  }
+    self.element().innerHTML = txt;
+	}
 
   return self;
 }

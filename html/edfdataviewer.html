@@ -3,12 +3,14 @@
 <head>
 <link rel="stylesheet" type='text/css' href="../css/edfbase.css"></style>
 <link rel="stylesheet" type='text/css' href="../css/edfdataviewer.css"></style>
+<link rel="stylesheet" type='text/css' href="../css/navbar.css"></style>
 <!-- <script src="../js/plotly&#45;latest.min.js"></script> -->
 <script src="https://cdn.plot.ly/plotly-1.38.3.min.js"></script>
 <!-- <script src="../js/edf.min.js"></script> -->
 <script src="https://unpkg.com/edfjs"></script>
 <script src="../js/util.js"></script>
 <script src="../js/keyboard.js"></script>
+<script src="../js/navbar.js"></script>
 <script src="../js/plotting_area.js"></script>
 <script src="../js/slider.js"></script>
 <script>
@@ -16,12 +18,13 @@
 	var figure = null;
 	var slider = null;
   var keyboard = Keyboard();
+  var navbar = Navbar("nav");
 
 	async function load_selected_file () {
 		var files = document.getElementById('fileSelector').files;
     edffile = await edfjs.EDF().from_file(files[0], header_only=false);
 		figure = PlottingArea("figure", edffile);
-		refresh_navbar();
+		navbar.refresh();
 		slider = Slider('slider', [figure]).build();
     keyboard.add("ArrowLeft", ()=>{slider.set_time(1*slider.value-1)});
     keyboard.add("ArrowRight", ()=>{slider.set_time(1*slider.value+1)});
@@ -37,28 +40,8 @@
 		figure = null;
 		slider = null;
     keyboard.remove_all();
-		refresh_navbar();
+		navbar.refresh();
 		document.getElementById('fileSelector').value = "";
-	}
-
-	function refresh_navbar() {
-    var nav = document.getElementById("nav");
-    var txt = "";
-    if (figure != null) {
-			var channels = figure.channels();
-      for (var c in figure.channels()) {
-        var C = channels[c];
-        txt += "<li";
-        if (C.selected) {
-          txt += " class='selected'";
-        } else {
-          txt += " class='unselected'";
-        }
-        txt += " onclick='figure.switch_selection("+c+", refresh_navbar)'>"+C.label+"</li>";
-      }
-      txt += "<li class='clear' onclick='clear_filecache()'>Close file</li>";
-    }
-    nav.innerHTML = txt;
 	}
 
 	function setup(evt) {

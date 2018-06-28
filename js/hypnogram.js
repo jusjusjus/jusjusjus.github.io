@@ -23,11 +23,13 @@ var Hypnogram = function (element_id, annotations, self) {
   }
 
   var del = function () {
-    self.element().innerHTML = '';
+    self.element().innerHTML = "";
   }
 
   function create_drawing_area() {
-    var txt = "<div class='hypnogramDrawingArea' id='hypnogramDrawingArea' style='height:150px;width:100%;'></div>";
+    var txt = "";
+    txt += "<table id='hypnogramInfo'></table>";
+    txt += "<div class='hypnogramDrawingArea' id='hypnogramDrawingArea' style='height:150px;width:100%;'></div>";
     txt += "<p style='text-align:right'><button class='filebutton' onclick='annotations.save()'>Download as csv</button></p>";
     self.element().innerHTML = txt;
   }
@@ -116,17 +118,27 @@ var Hypnogram = function (element_id, annotations, self) {
   }
 
   function set_time(t0) {
+    document.getElementById("hypnogramInfo").innerHTML = prob_to_html(t0);
     t0 = t0*sec2hour || window_start;
     window_start = t0;
     var drawingArea = document.getElementById("hypnogramDrawingArea");
     Plotly.restyle(drawingArea, {'x': [[window_start, window_start]]}, 2);
   }
 
+  function prob_to_html(t0) {
+    var idx = Math.floor(t0/30);
+    var probs = self.annotations.probabilities[idx];
+    var Pprobs = toPercent(probs);
+    var txt = "<tr><th>"+self.annotations.labels[idx]+"</th>";
+    for (var p in probs) {
+      txt += "<td style='color:"+color_map(probs[p])+"'>"+Pprobs[p]+"</td>";
+    }
+    return txt+"</tr>";
+  }
+
   function slider_str(t0) {
     var idx = Math.floor(t0/30);
-    var label = self.annotations.labels[idx]
-    var probs = self.annotations.probabilities[idx];
-    return "  Stage: "+label+" ("+toPercentStr(probs)+")";
+    return "   Stage: "+self.annotations.labels[idx];
   }
 
   function redraw() {

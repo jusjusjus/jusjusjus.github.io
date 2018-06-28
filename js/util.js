@@ -41,6 +41,15 @@ function argmax(arr) {
   return imax;
 }
 
+function toPercent(arr) {
+  if (arr === undefined) return [];
+  p = [];
+  for (var v=0; v<arr.length; v++) {
+    p[v] = Math.round(100*arr[v]);
+  }
+  return p;
+}
+
 function toPercentStr(arr) {
   if (arr === undefined) return "";
   var txt = "";
