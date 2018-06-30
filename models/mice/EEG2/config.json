@@ -1,0 +1,15 @@
+{
+	"input": {
+		"sampling_rate": 64.0,
+		"duration": 4.0,
+		"left": 8.0,
+		"right": 8.0,
+		"length": 1280,
+		"channels": ["#EEG2"]
+	},
+	"output": {
+		"type": "mixed-log-probability",
+		"classes": ["Wake", "REM", "Non REM", "Artifact"]
+
+	}
+}

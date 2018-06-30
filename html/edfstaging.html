@@ -33,7 +33,7 @@
   var edffile = null;
   var hypnogram = null;
   var dataloader = null;
-  var channel_cache = {};
+  var _channel_cache = {};
   var annotations = null;
   var keyboard = Keyboard();
   var navbar = Navbar("nav");
@@ -183,7 +183,7 @@
     delete model; model = null;
     delete hypnogram; hypnogram = null;
     delete annotations; annotations = null;
-    channel_cache = {};
+    _channel_cache = {};
     navbar.refresh();
     refresh_channelselection();
     document.getElementById('hypnogram').value = "";
@@ -202,8 +202,8 @@
         var input_channel = model.config.input.channels[i];
         txt += "<button onclick='toggleDropdown(\""+input_channel+"\")' class='dropbtn'>";
         txt += input_channel;
-        if (input_channel in channel_cache) {
-          txt += " ("+channel_cache[input_channel]+")";
+        if (input_channel in _channel_cache) {
+          txt += " ("+_channel_cache[input_channel]+")";
         } else {
           all_selected = false;
         }
@@ -230,18 +230,18 @@
   async function cache_channels_for_scoring () {
     for (var i in model.config.input.channels) {
       var input_channel = model.config.input.channels[i];
-      await sleep("Caching "+channel_cache[input_channel]+" as "+input_channel);
-      await edffile.cache_channel(channel_cache[input_channel], input_channel, model.config.input.sampling_rate)
+      await sleep("Caching "+_channel_cache[input_channel]+" as "+input_channel);
+      await edffile.cache_channel(_channel_cache[input_channel], input_channel, model.config.input.sampling_rate)
     }
     await sleep(" ");
   }
 
   function select_channel_for_scoring (input_channel, target_channel) {
     if (target_channel in edffile.channel_by_label) {
-      if (input_channel in channel_cache) {
-        figure.switch_selection(channel_cache[input_channel]);
+      if (input_channel in _channel_cache) {
+        figure.switch_selection(_channel_cache[input_channel]);
       }
-      channel_cache[input_channel] = target_channel;
+      _channel_cache[input_channel] = target_channel;
       figure.switch_selection(target_channel);
       refresh_channelselection();
       navbar.refresh();

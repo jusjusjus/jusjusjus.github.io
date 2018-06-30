@@ -34,7 +34,7 @@
   var edffile = null;
   var hypnogram = null;
   var dataloader = null;
-  var channel_cache = {};
+  var _channel_cache = {};
   var annotations = null;
   var keyboard = Keyboard();
   var navbar = Navbar("nav");
@@ -101,10 +101,10 @@
     prediction_lock = false;
   }
 
-  async function load_model() {
+  async function load_model(channel_config) {
     await sleep("Loading ML model ..");
     model = MiceModel();
-    await model.load_model("../models/mice/EEG1-EEG2-EMG");
+    await model.load_model("../models/mice/"+channel_config);
     try {
       await select_channel_for_scoring("#EEG1", "EEG1.2");
       await select_channel_for_scoring("#EEG2", "EEG2.2");
@@ -131,7 +131,7 @@
     keyboard.add("ArrowLeft", ()=>{slider.set_time(1*slider.value-1)});
     keyboard.add("ArrowRight", ()=>{slider.set_time(1*slider.value+1)});
     if (model === null) {
-      load_model();
+      refresh_channelselection();
     }
     await sleep("");
   }
@@ -160,22 +160,12 @@
     });
     keyboard.add("r", ()=>{
       var ii = 1*slider.value;
-      annotations.set_stage(ii, "R");
+      annotations.set_stage(ii, "REM");
       slider.set_time(ii+1);
     });
-    keyboard.add("1", ()=>{
+    keyboard.add("n", ()=>{
       var ii = 1*slider.value;
-      annotations.set_stage(ii, "N1");
-      slider.set_time(ii+1);
-    });
-    keyboard.add("2", ()=>{
-      var ii = 1*slider.value;
-      annotations.set_stage(ii, "N2");
-      slider.set_time(ii+1);
-    });
-    keyboard.add("3", ()=>{
-      var ii = 1*slider.value;
-      annotations.set_stage(ii, "N3");
+      annotations.set_stage(ii, "Non REM");
       slider.set_time(ii+1);
     });
   }
@@ -187,7 +177,7 @@
     delete model; model = null;
     delete hypnogram; hypnogram = null;
     delete annotations; annotations = null;
-    channel_cache = {};
+    _channel_cache = {};
     navbar.refresh();
     refresh_channelselection();
     document.getElementById('hypnogram').value = "";
@@ -195,6 +185,8 @@
     document.getElementById('scoreSelector').value = "";
   }
 
+
+  var _channel_configs = ['EEG2', 'EEG2-EMG', 'EEG1-EEG2-EMG'];
   async function refresh_channelselection() {
     var txt = "";
     if (model != null && edffile != null && edffile.channel_by_label != null) {
@@ -206,8 +198,8 @@
         var input_channel = model.config.input.channels[i];
         txt += "<button onclick='toggleDropdown(\""+input_channel+"\")' class='dropbtn'>";
         txt += input_channel;
-        if (input_channel in channel_cache) {
-          txt += " ("+channel_cache[input_channel]+")";
+        if (input_channel in _channel_cache) {
+          txt += " ("+_channel_cache[input_channel]+")";
         } else {
           all_selected = false;
         }
@@ -227,6 +219,21 @@
       } else {
         txt += "<button onclick='alert(\"All channels need to be selected\")' class='dropbtn exec'>Predict All Stages</button>";
       }
+    } else {
+      txt += "<div class='dropdown tooltip'>";
+      txt += "<span class='tooltiptext'>Select Input Channel Configuration</span>";
+      txt += "<button onclick='toggleDropdown(\"load_model\")' class='dropbtn'>";
+      txt += "Channel Config";
+      txt += "</button>";
+      txt += "<div id='load_model' class='dropdown-content'>";
+      txt += "<ul>";
+      for (var c in _channel_configs) {
+        var config = _channel_configs[c];
+        txt += "<li onclick='load_model(\""+config+"\")'>"+config+"</li>";
+      }
+      txt += "</ul>";
+      txt += "</div>";
+      txt += "</div>";
     }
     document.getElementById("channelSelection").innerHTML = txt;
   }
@@ -234,18 +241,18 @@
   async function cache_channels_for_scoring () {
     for (var i in model.config.input.channels) {
       var input_channel = model.config.input.channels[i];
-      await sleep("Caching "+channel_cache[input_channel]+" as "+input_channel);
-      await edffile.cache_channel(channel_cache[input_channel], input_channel, model.config.input.sampling_rate)
+      await sleep("Caching "+_channel_cache[input_channel]+" as "+input_channel);
+      await edffile.cache_channel(_channel_cache[input_channel], input_channel, model.config.input.sampling_rate)
     }
     await sleep(" ");
   }
 
   function select_channel_for_scoring (input_channel, target_channel) {
     if (target_channel in edffile.channel_by_label) {
-      if (input_channel in channel_cache) {
-        figure.switch_selection(channel_cache[input_channel]);
+      if (input_channel in _channel_cache) {
+        figure.switch_selection(_channel_cache[input_channel]);
       }
-      channel_cache[input_channel] = target_channel;
+      _channel_cache[input_channel] = target_channel;
       figure.switch_selection(target_channel);
       refresh_channelselection();
       navbar.refresh();
@@ -261,6 +268,7 @@
     var scoreSelector = document.getElementById('scoreSelector');
     if (fileSelector.value != "") {
       await load_selected_file();
+      refresh_channelselection();
     }
     if (scoreSelector.value != "") {
       await load_selected_annots();
