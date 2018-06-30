@@ -16,7 +16,10 @@ var Hypnogram = function (element_id, annotations, self) {
     staticPlot: true
   };
 
-  var hash2label = ['N3', 'N2', 'N1', 'R', 'Wake'];
+  var hash2label = [];
+  for (var i=1; i<=annotations.classes.length; i++) {
+    hash2label[i-1] = annotations.classes[annotations.classes.length-i];
+  }
   var label2hash = {}
   for (let l in hash2label) {
     label2hash[hash2label[l]] = l;
@@ -28,9 +31,11 @@ var Hypnogram = function (element_id, annotations, self) {
 
   function create_drawing_area() {
     var txt = "";
+    txt += "<div id='hypnogramDiv'>";
     txt += "<table id='hypnogramInfo'></table>";
     txt += "<div class='hypnogramDrawingArea' id='hypnogramDrawingArea' style='height:150px;width:100%;'></div>";
     txt += "<p style='text-align:right'><button class='filebutton' onclick='annotations.save()'>Download as csv</button></p>";
+    txt += "</div>";
     self.element().innerHTML = txt;
   }
 
@@ -69,18 +74,19 @@ var Hypnogram = function (element_id, annotations, self) {
   async function create_new_plot() {
     create_drawing_area();
     var traces = [];
+    var tickvals = [];
+    for(var tt in hash2label) tickvals[tt] = tt;
     var layout = {
       plot_bgcolor: rgb(0.94,0.99,0.75),
       paper_bgcolor: rgb(0.94,0.99,0.75),
       showlegend: false,
-      xaxis: {title: "relative time (hours)"},
       margin: {t: 0, b: 30, l: 40, r: 20},
       yaxis: {
-        tickvals: [0, 1, 2, 3, 4],
+        tickvals: tickvals,
         ticktext: hash2label,
         zeroline: false
       },
-      xaxis: {}
+      xaxis: { title: "relative time (hours)" }
     };
     // data
     var data = [];
@@ -108,7 +114,7 @@ var Hypnogram = function (element_id, annotations, self) {
       yaxis: "y"
     };
     var vert = {
-      x: [window_start, window_start], y: [-0.5, 4.5],
+      x: [window_start, window_start], y: [-0.5, hash2label.length-0.5],
       mode: "lines", 
       line: { color: rgb(0.25,0.25,0.25), width: 2.0 },
     };
@@ -126,10 +132,20 @@ var Hypnogram = function (element_id, annotations, self) {
   }
 
   function prob_to_html(t0) {
-    var idx = Math.floor(t0/30);
+    var idx = Math.floor(t0/self.annotations.dt);
     var probs = self.annotations.probabilities[idx];
     var Pprobs = toPercent(probs);
-    var txt = "<tr><th>"+self.annotations.labels[idx]+"</th>";
+    var label = self.annotations.labels[idx];
+    var txt = "<tr>";
+    for (var l in self.annotations.classes) {
+      var cl = self.annotations.classes[l];
+      if (label == cl) {
+        txt += "<th>"+cl+"</th>";
+      } else {
+        txt += "<td>"+cl+"</td>";
+      }
+    }
+    txt += "</tr><tr>";
     for (var p in probs) {
       txt += "<td style='color:"+color_map(probs[p])+"'>"+Pprobs[p]+"</td>";
     }
@@ -137,7 +153,7 @@ var Hypnogram = function (element_id, annotations, self) {
   }
 
   function slider_str(t0) {
-    var idx = Math.floor(t0/30);
+    var idx = Math.floor(t0/self.annotations.dt);
     return "   Stage: "+self.annotations.labels[idx];
   }
 
@@ -153,10 +169,11 @@ var Hypnogram = function (element_id, annotations, self) {
   document.addEventListener("annotations_changed", redraw);
 
   self.del = del;
-  self.set_time = set_time;
-  self.slider_str = slider_str;
-  self.create_new_plot = create_new_plot;
   self.redraw = redraw;
+  self.set_time = set_time;
+  self.hash2label = hash2label;
+  self.slider_str = slider_str;
   self.labels2curve = labels2curve;
+  self.create_new_plot = create_new_plot;
   return self;
 }
