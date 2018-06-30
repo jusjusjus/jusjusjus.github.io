@@ -32,13 +32,18 @@
     display: inline-block;
 }
 
+#hypnogramInfo {
+	margin-right: 0%;
+	margin-left: auto;
+}
+
 #hypnogramInfo td, #hypnogramInfo th {
   font-family: Monospace;
-  font-size: 14pt;
+  font-size: 10pt;
   border: 1px solid #ddd;
   padding: 4px;
   text-align: right;
-  width: 50px;
+  width: 35px;
   background-color: lightgrey;
 }
 
