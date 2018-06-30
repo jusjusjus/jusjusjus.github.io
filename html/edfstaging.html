@@ -46,7 +46,7 @@
     await sleep("Initializing sleep staging ..");
     build_dataloader();
     const batch_size = 64;
-    const num_classes = 5;
+    const num_classes = model.config.output.classes.length;
     var batch = [],
         ii;
     annotations = Annotations(model.config.input.duration);
