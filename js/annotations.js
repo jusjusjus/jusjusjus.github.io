@@ -69,6 +69,7 @@ var CSV = function (self, data) {
   self.data = data || null;
 
   var transform = function (v, c) {
+    c = c.trim().toLowerCase();
     try {
       return trafo[c](v);
     } catch {
@@ -78,20 +79,25 @@ var CSV = function (self, data) {
   }
 
   var trafo = {
-    '#Onset': (v) => new Date(v+'Z'),
+    // Start data-time of annotation
+    '# start': (v) => new Date(v+'Z'),
+    '#onset': (v) => new Date(v+'Z'),
     't0': (v) => new Date(v+'Z'),
-    Duration: (v) => parseFloat(v),
+    // Duration of annotation
+    duration: (v) => parseFloat(v),
     'dt': (v) => parseFloat(v),
-    Annotation: (v) => v,
+    // Label of annotation
+    annotation: (v) => v,
     label: (v) => v
   }
 
   var colname_map = {
-    '#Onset': 'start',
+    '# start': 'start',
+    '#onset': 'start',
     't0': 'start',
-    'Duration': 'dt',
+    'duration': 'dt',
     'dt': 'dt',
-    'Annotation': 'label',
+    'annotation': 'label',
     'label': 'label'
   }
 
@@ -99,8 +105,8 @@ var CSV = function (self, data) {
     return function (parsed) {
       var converted = row2col(parsed.data);
       self.data = {};
-      for (label in converted) {
-        self.data[colname_map[label]] = converted[label];
+      for (let label in converted) {
+        self.data[colname_map[label.trim().toLowerCase()]] = converted[label];
       }
       callback(self.data);
     }
@@ -124,23 +130,23 @@ var CSV = function (self, data) {
 }
 
 
-var Annotations = function (dt, labels, self) {
+var Annotations = function (dt, classes, self) {
   dt = dt || null;
-  labels = labels || ['Wake', 'R', 'N1', 'N2', 'N3'];
   self = self || {};
+  self.classes = classes || ['Wake', 'R', 'N1', 'N2', 'N3'];
 
-  var hash2label = labels
+  var hash2label = self.classes
   var label2hash = {}
-  for (var l in labels) {
-    label2hash[labels[l]] = l;
+  for (var l in self.classes) {
+    label2hash[self.classes[l]] = l;
   }
 
   self.dt = dt;
-  self.labels = [];
-  self.start = [];
   self.t0 = [];
-  self.probabilities = [];
+  self.start = [];
+  self.labels = [];
   self.max_probs = [];
+  self.probabilities = [];
 
   self.stream_probs = function (probs) {
     assert(self.dt !== null, "time step `Annotations.dt` not set.");
@@ -179,7 +185,7 @@ var Annotations = function (dt, labels, self) {
     var idx = label2hash[stage]
     self.labels[n] = stage;
     self.max_probs[n] = 1;
-    self.probabilities[n] = one_hot(idx, labels.length);
+    self.probabilities[n] = one_hot(idx, self.classes.length);
     document.dispatchEvent(new Event("annotations_changed"));
   }
   
@@ -188,6 +194,7 @@ var Annotations = function (dt, labels, self) {
       var filename = typeof file === "object" ? file.name : file;
       if (filename.endsWith('.csv')) {
         CSV().load(file, function (d) {
+          console.log(d);
           self.dt = d.dt[0];
           for(var i in d.dt)
             assert(d.dt[i] === self.dt, "Epoch "+i+"is too short.");
@@ -200,7 +207,7 @@ var Annotations = function (dt, labels, self) {
             var imax = label2hash[label];
             self.t0.push(l*30);
             self.max_probs.push(1);
-            self.probabilities[l] = one_hot(imax, labels.length);
+            self.probabilities[l] = one_hot(imax, self.classes.length);
           }
           resolve(self);
         });

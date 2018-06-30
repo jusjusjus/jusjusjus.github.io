@@ -1,8 +1,9 @@
 
 'use strict'
 
-var PlottingArea = function (element_id, edffile, window_duration, self) {
+var PlottingArea = function (element_id, edffile, window_duration, start_offset, self) {
   window_duration = window_duration || 10.0; // sec.
+  start_offset = start_offset || 0.0; // sec.
   self = self || {};
 
   self.element_id = element_id;
@@ -70,7 +71,11 @@ var PlottingArea = function (element_id, edffile, window_duration, self) {
       plot_bgcolor: "rgb(0.94,0.99,0.75)",
       paper_bgcolor: "rgb(0.94,0.99,0.75)",
       showlegend: false,
-      xaxis: {title: "relative time (sec.)"},
+      xaxis: {
+        title: "relative time (sec.)",
+        tick0: 0,
+        dtick: 1
+      },
       margin: { t: 0, b: 30, l: 40, r: 20 }
     };
     var domain = Array.from(new Array(selected_labels.length+1), (val, idx)=>idx/selected_labels.length)
@@ -100,8 +105,8 @@ var PlottingArea = function (element_id, edffile, window_duration, self) {
   }
 
   async function set_time(t0) {
-    t0 = t0 || window_start;
-    window_start = t0;
+    window_start = t0+start_offset || window_start;
+    window_start = window_start < 0.0 ? 0.0: window_start;
     var drawingArea = document.getElementById("drawingArea");
     var selected_labels = get_selected_labels();
     var Y = await self.file.get_physical_samples(window_start, window_duration, selected_labels);

@@ -82,3 +82,11 @@ function sleep(status_update) {
     document.getElementById("status").innerHTML = status_update;
   return new Promise(resolve => setTimeout(resolve, 0));
 }
+
+
+function join(a, b) {
+  a = (a.endsWith('/')?a.slice(0, a.length-1):a);
+  b = (b.startsWith('/')?b.slice(1, a.length):b);
+  console.log(a, b);
+  return a+'/'+b;
+}

@@ -35,12 +35,12 @@ var Model = function (self) {
     });
   }
 
-  async function load_model(num_layers=8) {
+  async function load_model(modelpath='../models/humans/aasm') {
     assert(self.net === null, "Warning re-loading net");
     // eventually switch this to a cdn
     // var modelfile = 'https://cdn.rawgit.com/jusjusjus/jusjusjus.github.io/5a71936b/models/humans/aasm/model.json';
-    var modelfile = '../models/humans/aasm/model.json'
-    var configfile = '../models/humans/aasm/config.json'
+    var modelfile = join(modelpath, 'model.json'),
+        configfile = join(modelpath, 'config.json');
     self.config = await load_config(configfile);
     self.net = await tf.loadModel(modelfile);
   }
