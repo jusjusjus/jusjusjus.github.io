@@ -17,9 +17,9 @@ var col2row = function (cols) {
       num_cols = cols.length,
       num_rows = cols[0].length,
       r, c;
-  for (r=0; r<num_rows; r++) {
+  for (r=0; r < num_rows; r++) {
     rows[r] = []
-    for(c=0; c<num_cols; c++) {
+    for(c=0; c < num_cols; c++) {
       rows[r][c] = cols[c][r];
     }
   }
@@ -39,22 +39,22 @@ function download(strData, strFileName, strMimeType) {
   a.href = "data:" + strMimeType + "charset=utf-8," + escape(strData);
 
   if (window.MSBlobBuilder) {
-      var bb = new MSBlobBuilder();
-      bb.append(strData);
-      return navigator.msSaveBlob(bb, strFileName);
+    var bb = new MSBlobBuilder();
+    bb.append(strData);
+    return navigator.msSaveBlob(bb, strFileName);
   }
 
   if ('download' in a) {
-      a.setAttribute("download", n);
-      a.innerHTML = "downloading...";
-      D.body.appendChild(a);
-      setTimeout(function() {
-          var e = D.createEvent("MouseEvent");
-          e.initMouseEvent("click", true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-          a.dispatchEvent(e);
-          D.body.removeChild(a);
-      }, 66);
-      return true;
+    a.setAttribute("download", n);
+    a.innerHTML = "downloading...";
+    D.body.appendChild(a);
+    setTimeout(function() {
+      var e = D.createEvent("MouseEvent");
+      e.initMouseEvent("click", true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+      a.dispatchEvent(e);
+      D.body.removeChild(a);
+    }, 66);
+    return true;
   };
   var f = D.createElement("iframe");
   D.body.appendChild(f);
@@ -123,7 +123,7 @@ var CSV = function (self, data) {
   }
 
   self.save = function (filename) {
-    text = Papa.unparse(self.data);
+    const text = Papa.unparse(self.data);
     download(text, filename);
   }
   return self;
@@ -157,7 +157,7 @@ var Annotations = function (dt, classes, self) {
     self.labels.push(hash2label[imax]);
     self.probabilities.push(probs[i]);
     self.max_probs.push(probs[i][imax]);
-    for(i=1; i<probs.length; i++) {
+    for(i=1; i < probs.length; i++) {
       imax = argmax(probs[i]);
       self.t0.push(self.t0[self.t0.length-1]+self.dt);
       self.labels.push(hash2label[imax]);
@@ -173,7 +173,7 @@ var Annotations = function (dt, classes, self) {
     self.labels = [];
     self.max_probs = [];
     self.t0 = Float32Array.from(new Float32Array(probs.length), (val, idx)=>dt*idx);
-    for(var i=0; i<probs.length; i++) {
+    for(var i=0; i < probs.length; i++) {
       var imax = argmax(probs[i]);
       self.max_probs.push(probs[i][imax]);
       self.labels.push(hash2label[imax]);

@@ -17,7 +17,7 @@ var Hypnogram = function (element_id, annotations, self) {
   };
 
   var hash2label = [];
-  for (var i=1; i<=annotations.classes.length; i++) {
+  for (var i=1; i <= annotations.classes.length; i++) {
     hash2label[i-1] = annotations.classes[annotations.classes.length-i];
   }
   var label2hash = {}

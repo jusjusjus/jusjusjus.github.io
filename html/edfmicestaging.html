@@ -8,7 +8,7 @@
 <!-- <script src="../js/plotly&#45;latest.min.js"></script> -->
 <script src="https://cdn.plot.ly/plotly-1.38.3.min.js"></script>
 <!-- <script src="../js/edf.min.js"></script> -->
-<script src="https://unpkg.com/edfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/edfjs@latest/dist/edf.min.js"></script>
 <!-- <script src="../js/papaparse.min.js"></script> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.5.0/papaparse.min.js"></script>
 <!-- Eventually switch fili to cdn again -->
@@ -57,7 +57,7 @@
     annotations = Annotations(model.config.input.duration,
       model.config.output.classes);
     show_hypnogram();
-    for (ii=0; ii<dataloader.length; ii++) {
+    for (ii=0; ii < dataloader.length; ii++) {
       batch.push(await dataloader.get(ii));
       if (batch_size == batch.length) {
         const result = tf.tidy( () => {
@@ -66,7 +66,7 @@
         });
         var arr = result.buffer().values;
         var probs = [];
-        for (var e=0; e<arr.length; e+=num_classes) {
+        for (var e=0; e < arr.length; e+=num_classes) {
           probs.push(arr.slice(e, e+num_classes));
         }
         annotations.stream_probs(probs);
@@ -87,7 +87,7 @@
       var final_batch_size = result.shape[0];
       var arr = result.buffer().values;
       var probs = [];
-      for (var e=0; e<arr.length; e+=num_classes) {
+      for (var e=0; e < arr.length; e+=num_classes) {
         probs.push(arr.slice(e, e+num_classes));
       }
       annotations.stream_probs(probs);

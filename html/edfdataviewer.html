@@ -7,7 +7,7 @@
 <!-- <script src="../js/plotly&#45;latest.min.js"></script> -->
 <script src="https://cdn.plot.ly/plotly-1.38.3.min.js"></script>
 <!-- <script src="../js/edf.min.js"></script> -->
-<script src="https://unpkg.com/edfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/edfjs@latest/dist/edf.min.js"></script>
 <script src="../js/util.js"></script>
 <script src="../js/keyboard.js"></script>
 <script src="../js/navbar.js"></script>
@@ -22,7 +22,8 @@
 
 	async function load_selected_file () {
 		var files = document.getElementById('fileSelector').files;
-    edffile = await edfjs.EDF().from_file(files[0], header_only=false);
+		edffile = new edfjs.EDF();
+    await edffile.from_file(files[0], header_only=false);
 		figure = PlottingArea("figure", edffile);
 		navbar.refresh();
 		slider = Slider('slider', [figure]).build();

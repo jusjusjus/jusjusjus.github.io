@@ -26,7 +26,7 @@ var linear_downsample = function (X, sr_old, sr_new) {
   var I = Int32Array.from(t);
   var x = new Float32Array(t.length);
   x[0] = X[0];
-  for (var i=1; i<t.length; i++) {
+  for (var i=1; i < t.length; i++) {
     var n = I[i], n1 = I[i]+1;
     x[i] = X[n1]*(t[i]-n)+X[n]*(n1-t[i]);
   }
@@ -38,7 +38,7 @@ function assert(condition, msg) {
 }
 
 var FilteredEDF = function (self={}) {
-  self = edfjs.EDF(self);
+  self = new edfjs.EDF(self);
   var parent = {
     get_physical_samples: self.get_physical_samples,
     channel_by_label: self.channel_by_label
@@ -56,7 +56,7 @@ var FilteredEDF = function (self={}) {
     }
     var to_cache = self.channel_by_label[label];
     var sr_old = to_cache.sampling_rate;
-    var cached = edfjs.Channel();
+    var cached = new edfjs.Channel();
     cached.blob = Float32Array.from(
       linear_downsample(to_cache.blob, sr_old, sr_new));
     cached.sampling_rate = sr_new;
