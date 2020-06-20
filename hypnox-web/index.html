@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hynpox Web</title>
+  <meta name="viewport" content="width=device-width">
+  <!-- begin gulp modifications -->
+  <link rel="stylesheet" href="bootstrap_bright_edited.css">
+  <link rel="stylesheet" href="signal_view.css">
+  <link rel="stylesheet" href="menubar.css">
+  <link rel="stylesheet" href="dialogs.css">
+  <link rel="stylesheet" href="annot_list.css">
+  <link rel="stylesheet" href="signal_source.css">
+
+  <script>var baseURL="";</script>
+
+  <script>var sampleFileURL="/samples/sample.edf";</script>
+
+  <script src="webcomponents-lite.js"></script>
+  <script src="jquery.min.js"></script>
+  <script src="bootstrap.min.js"></script>
+  <script src="libbiswasm_nongpl_wasm.js"></script>
+  <script src="bislib.js"></script>
+  <script src="plotly-latest.min.js"></script>
+  <script src="tfjs-0.11.6-mod.js"></script>
+  <script src="fili.min-mod.js"></script>
+  <script src="index_bundle.js"></script>
+
+  <link rel="manifest" href="./manifest.json">
+  <!-- end gulp modifications -->
+</head>
+<body>
+  <div id="main">
+    <menu-bar id="menubar"></menu-bar>
+    <signal-view id="signal-view" menubar="#menubar"
+			annotations-list="#annotationList"></signal-view>
+		<signal-source id="signal-source" menubar="#menubar"
+			signal-view="#signal-view" annotation-list="#annotationList"></signal-source>
+		<hypnogram-view id="hypnogram-view" menubar="#menubar"></hypnogram-view>
+  </div>
+  <annotation-list
+		id="annotationList"
+		menubar="#menubar"
+		signal-source="#signal-source"
+		hypnogram="#hypnogram-view"></annotation-list>
+	<classify-element
+		id="classify-elem"
+		menubar="#menubar"
+		annotation-list="#annotationList"
+		signal-source="#signal-source"></classify-element>
+  <noscript>Your browser does not support JavaScript!</noscript>
+</body>
+</html>

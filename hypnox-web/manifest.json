@@ -1,0 +1,20 @@
+{
+  "name": "Hypnox Web",
+  "short_name": "hypnox-web",
+  "start_url": "index.html",
+  "display": "fullscreen",
+  "description": "Hypnox Web scores your favorite mouse-EEG recordings in the browser",
+  "lang": "English",
+  "orientation": "any",
+  "splash_page": null,
+  "icons": [
+    {
+      "src": "images/mock-logo-192-192.png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "images/mock-logo-512-512.png",
+      "sizes": "512x512"
+    }
+  ]
+}

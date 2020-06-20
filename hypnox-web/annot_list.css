@@ -1,0 +1,75 @@
+
+/* orange: #f8c68d */
+/* red: #ca555f */
+/* red-orange: #fc8236 */
+
+.annotation-list {
+  height: 85%;
+  width: 0;
+  left: 0;
+  top: 15%;
+  z-index: 1;
+  position: fixed;
+  display: block;
+  overflow-x: hidden;
+  font-size: 10px;
+  transition: 0.5s;
+}
+
+/* Maximize width of control panel */
+.annot-control {
+  width: 100%;
+}
+
+/* increase font-size of control buttons */
+input.annot-control {
+  font-size: 16px;
+}
+
+/* turn control buttons red when hovering */
+input.annot-control:hover {
+  background-color: red;
+}
+
+div.annot-list {
+  height: 85%;
+  overflow-y: scroll;
+}
+
+#main {
+  transition: margin-left .5s;
+  padding: 20px;
+}
+
+#annotation-list {
+  width: 100%;
+}
+
+td.annot-list, th.annot-list {
+  border: 1px solid #ddd;
+  padding: 4px;
+}
+
+th.annot-list {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: center;
+  background-color: green;
+  color: white;
+}
+
+tr.annot-list, .annot-list-selected {
+  text-align: right;
+}
+
+tr.annot-list:nth-child(even) {
+  background-color: #ddd;
+}
+
+tr.annot-list:hover, .annot-list-selected:hover {
+  font-weight: bold;
+}
+
+tr.annot-list-selected {
+  background-color: #2bf5e6;
+}
