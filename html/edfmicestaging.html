@@ -104,7 +104,7 @@
   async function load_model(channel_config) {
     await sleep("Loading ML model ..");
     model = MiceModel();
-    await model.load_model("../models/mice/"+channel_config);
+    await model.load_model("../hypnox-web/models/"+channel_config);
     try {
       await select_channel_for_scoring("#EEG1", "EEG1.2");
       await select_channel_for_scoring("#EEG2", "EEG2.2");
